@@ -10,11 +10,11 @@
 2. Cloning The Repo:
 - On your terminal run `git clone "https://github.com/fadhili2430/TUKUTANE-PROJECT-2026.git"` in any directory in your home directory.
 - Change into the directory named _TUKUTANE-PROJECT-2026_: `cd TUKUTANE-PROJECT-2026`.
-- Set up your _environment_: `python -m venv project_env` (**python** can be python/python2/python3 depending on your _python_ binary version)
+- Set up your _environment_: `python -m venv venv` (**python** can be python/python2/python3 depending on your _python_ binary version)
 
 3. Activate Environment:
-- Windows: Again, on your terminal: run: `project_env\Scripts\activate`.
-- Mac/Linux: Run: `. project_env/bin/activate` or `source project_env/bin/activate`.
+- Windows: Again, on your terminal: run: `venv\Scripts\activate`.
+- Mac/Linux: Run: `. venv/bin/activate` or `venv/bin/activate`.
 - Install **Flask** module by running `pip install -r requirements.txt` in your terminal. (can be _pip_ or _pip3_)
 
 4. Start the web app
