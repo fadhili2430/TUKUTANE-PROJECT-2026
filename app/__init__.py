@@ -1,10 +1,9 @@
 from flask import Flask
 
 def create_app():
-    app = Flask(__name__)
+    app = Flask(__name__, template_folder='../templates', static_folder='../static')
 
-    @app.route("/")
-    def home():
-        return "Tukutane is running!"
+    from .routes import main
+    app.register_blueprint(main)
 
     return app

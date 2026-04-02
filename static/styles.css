@@ -2,7 +2,8 @@ body {
 margin: 0;
 align-items: center;
 justify-content: center;
-background-color: linear_gradient(121, 121, 121, 1);
+background: linear-gradient(90deg, #fd5566 10%, blue 80%);
 color: #fafafa;
 display: flex;
+flex-direction: column;
 }
