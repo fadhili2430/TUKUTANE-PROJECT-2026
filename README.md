@@ -3,7 +3,7 @@
 
 ## Instructions on Setting up Your Environment And Run *TUKUTANE*:
 1. Opening Your Terminal:
-- Linux: `Win+Sift+T` is the keyboard shortcut or search for _terminal_ on your Desktop Environment.
+- Linux: `Win+Shift+T` is the keyboard shortcut or search for _terminal_ on your Desktop Environment.
 - Windows: `Win+X` and select _Command Prompt_ or _Powershell_ whichever you are comfortable with or alternatively `Win+R` and type either `powershell` or `cmd` and click `Enter`.
 (That is what we will be calling a _terminal_)
 
@@ -14,10 +14,11 @@
 
 3. Activate Environment:
 - Windows: Again, on your terminal: run: `venv\Scripts\activate`.
-- Mac/Linux: Run: `. venv/bin/activate` or `venv/bin/activate`.
+- Mac/Linux: Run: `. venv/bin/activate` or `source venv/bin/activate`.
 - Install **Flask** module by running `pip install -r requirements.txt` in your terminal. (can be _pip_ or _pip3_)
 
 4. Start the web app
+
 On your terminal, run: `python run.py` or `flask --app run.py run` (Again, can be python or python2 or python3)
 ---
 If the above steps didn't work for you, it's probably because you do not have python installed. First check if you have python installed by searching it up on your computer or running `python -v` or `python --version` (python or python3). If the above command fails:
