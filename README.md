@@ -20,6 +20,7 @@
 4. Start the web app
 
 On your terminal, run: `python run.py` or `flask --app run.py run` (Again, can be python or python2 or python3)
+
 ---
 If the above steps didn't work for you, it's probably because you do not have python installed. First check if you have python installed by searching it up on your computer or running `python -v` or `python --version` (python or python3). If the above command fails:
 - Windows: You can visit [Python's Main Page](https://python.org) and install it, then redo the steps.
