@@ -1,3 +1,4 @@
+ HEAD
 from flask import Blueprint, render_template, request, redirect, flash, url_for
 
 main = Blueprint('main', __name__) # same functionality/properties as the main 'app' instance
@@ -57,3 +58,30 @@ def signout():
 
 
 
+
+from flask import Blueprint, request
+from app.models import User
+from app import db
+
+bp = Blueprint('main', __name__)
+
+@bp.route('/login', methods=['POST'])
+def login():
+    username = request.form['username']
+    password = request.form['password']
+    user = User.query.filter_by(username=username).first()
+    if user and user.check_password(password):
+        return "Login successful!"
+    else:
+        return "Invalid credentials"
+
+@bp.route('/register', methods=['POST'])
+def register():
+    username = request.form['username']
+    password = request.form['password']
+    new_user = User(username=username)
+    new_user.set_password(password)
+    db.session.add(new_user)
+    db.session.commit()
+    return "User registered successfully!"
+ bf6d2ca ( Initial commit with password hashingand database setup)
