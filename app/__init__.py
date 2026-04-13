@@ -15,4 +15,22 @@ def create_app():
     
     return app
 
+ HEAD
 from app import models
+
+from flask import Flask
+from flask_sqlalchemy import SQLAlchemy
+
+db = SQLAlchemy()
+
+def create_app():
+    app = Flask(__name__)
+    app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///site.db'
+    db.init_app(app)
+
+    # Register routes
+    from app.routes import bp
+    app.register_blueprint(bp)
+
+    return app
+ bf6d2ca ( Initial commit with password hashingand database setup)
