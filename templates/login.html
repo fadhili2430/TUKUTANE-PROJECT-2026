@@ -4,10 +4,21 @@
 	<title>Log In</title>
 	<meta charset='utf-8'>
 	<meta name="viewport" content="width=device-width,initial-scale=1">
-<!--	<link rel="stylesheet" href="{{url_for('static', filename='css/styles.css')}}"> -->
+	<link rel="stylesheet" href="{{url_for('static', filename='css/login.css')}}">
 </head>
 <body>
 	<h1>Log In</h1>
 	<p>Tukutane is running...</p>
+
+	<div class='form'>
+	<form action="/login" method="POST" class="for">
+		<label for="username">Username:</label></br>
+		<input type="text" name="username" placeholder="Your username"></br>
+		<label for="password">Password:</label></br>
+		<input type="password" name="password">
+		<button>Submit</button>
+	</form>
+	</div>
+
 </body>
 </html>

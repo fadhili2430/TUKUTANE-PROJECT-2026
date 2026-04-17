@@ -1,0 +1,32 @@
+ body {
+justify-content: center;
+background-color: #340088;
+color: #fafafa;
+align-items: center;
+align-content: center;
+padding-left: 600px;
+padding-top: 200px;
+}
+
+.form {
+    border-radius: 30px;
+    width: 600px;
+    height: 400px;
+    background-color: #b6b6b6;
+    align-content: center;
+    justify-content: center;
+    display:inline-flex;
+}
+
+input {
+    width: 70%;
+    height: 20%;
+}
+
+button {
+    background-color: goldenrod;
+    border-radius: 10%;
+    border: none;
+    width: 40%;
+    height: 15%;
+}
