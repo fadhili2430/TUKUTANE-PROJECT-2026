@@ -1,18 +1,24 @@
-from app import db
+from flask_login import UserMixin
+from . import db, login_manager
 from werkzeug.security import generate_password_hash, check_password_hash
+from datetime import datetime, UTC
+
+@login_manager.user_loader
+def load_user(user_id):
+    return User.query.get(int(user_id))
 
 user_interests = db.Table('user_interests',
     db.Column('user_id', db.Integer, db.ForeignKey('user.id'), primary_key=True),
     db.Column('interest_id', db.Integer, db.ForeignKey('interest.id'), primary_key=True)
 )
 
-class User(db.Model):
+class User(db.Model, UserMixin):
     """Table for student Accounts and Profiles"""
     id = db.Column(db.Integer, primary_key=True)
     username = db.Column(db.String(50), unique=True, nullable=False)
     password_hash = db.Column(db.String(128), nullable=False)
 
-    #Relationships
+    # Relationships
     events_organised = db.relationship('Event', backref='organiser', lazy=True)
     interests = db.relationship('Interest', secondary=user_interests, backref=db.backref('users', lazy='dynamic'))
     rsvps = db.relationship('RSVP', backref='user', lazy=True)
@@ -39,6 +45,9 @@ class Event(db.Model):
     organiser_id = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=False)
 
     rsvps = db.relationship('RSVP', backref='event', lazy=True)
+
+    date_posted = db.Column(db.DateTime, nullable=False, default=datetime.now(UTC))
+    event_date = db.Column(db.DateTime, nullable=False)
 
     def __repr__(self):
         return f'<Event {self.title}>'

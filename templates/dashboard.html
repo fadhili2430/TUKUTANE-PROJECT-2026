@@ -4,10 +4,10 @@
 	<title>My Dashboard</title>
 	<meta charset='utf-8'>
 	<meta name="viewport" content="width=device-width,initial-scale=1">
-<!--	<link rel="stylesheet" href="{{url_for('static', filename='css/styles.css')}}"> -->
+	<link rel="stylesheet" href="{{url_for('static', filename='css/dashboard.css')}}">
 </head>
 <body>
-	<h1>This is Your Dashboard!</h1>
-	<p>Tukutane is running...</p>
+	<h1>Welcome to Your Dashboard, {{current_user.username}}</h1>
+	<p>ID: {{current_user.id}}</p>
 </body>
 </html>
