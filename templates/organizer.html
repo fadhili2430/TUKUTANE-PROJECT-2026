@@ -1,0 +1,52 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Organizer Dashboard - Tukutane</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/dashboard.css') }}">
+</head>
+<body>
+    <header>
+        <h1>Organizer Dashboard</h1>
+        <a href="{{ url_for('main.dashboard') }}">Back to Dashboard</a> |
+        <a href="{{ url_for('main.create_event') }}">Create New Event</a> |
+        <a href="{{ url_for('main.logout') }}">Logout</a>
+    </header>
+
+    {% with messages = get_flashed_messages() %}
+      {% if messages %}<p style="color: goldenrod;">{{ messages[0] }}</p>{% endif %}
+    {% endwith %}
+
+    <h2>Your Organized Events</h2>
+    {% if events %}
+    <div class="events-container" style="display: flex; flex-wrap: wrap; gap: 20px;">
+        {% for event in events %}
+        <div class="event-card" style="border: 1px solid #fafafa; padding: 15px; width: 300px; border-radius: 10px;">
+            <h3>{{ event.title }}</h3>
+            <p><strong>Description:</strong> {{ event.description or 'No description' }}</p>
+            <p><strong>Activity:</strong> {{ event.activity.name }}</p>
+            <p><strong>Campus Area:</strong> {{ event.campus_area.name }}</p>
+            <p><strong>Date:</strong> {{ event.date }}</p>
+            <p><strong>Time:</strong> {{ event.time }}</p>
+            <p><strong>Max Attendees:</strong> {{ event.max_attendees }}</p>
+            {% set confirmed_rsvps = event.rsvps | selectattr('status', 'equalto', 'confirmed') | list %}
+            <p><strong>Current RSVPs:</strong> {{ confirmed_rsvps | length }}</p>
+            
+            <div style="margin-top: 10px;">
+                <a href="{{ url_for('main.edit_event', event_id=event.id) }}">
+                    <button style="background: goldenrod; color: #000044; border: none; padding: 5px 10px; margin-right: 5px; cursor: pointer;">Edit</button>
+                </a>
+                <a href="{{ url_for('main.cancel_event', event_id=event.id) }}" onclick="return confirm('Are you sure you want to cancel this event?')">
+                    <button style="background: #dc3545; color: white; border: none; padding: 5px 10px; margin-right: 5px; cursor: pointer;">Cancel Event</button>
+                </a>
+                <a href="{{ url_for('main.view_rsvps', event_id=event.id) }}">
+                    <button style="background: #28a745; color: white; border: none; padding: 5px 10px; cursor: pointer;">View RSVPs</button>
+                </a>
+            </div>
+        </div>
+        {% endfor %}
+    </div>
+    {% else %}
+    <p>You haven't organized any events yet. <a href="{{ url_for('main.create_event') }}">Create your first event!</a></p>
+    {% endif %}
+</body>
+</html>

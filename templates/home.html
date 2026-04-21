@@ -1,13 +1,19 @@
 <!DOCTYPE html>
 <html>
 <head>
-	<title>Main Page</title>
+	<title>Tukutane - Social Event Management</title>
 	<meta charset='utf-8'>
 	<meta name="viewport" content="width=device-width,initial-scale=1">
 	<link rel="stylesheet" href="{{url_for('static', filename='css/home.css')}}">
 </head>
 <body>
-	<h1>Welcome To the Home Page</h1>
-	<p>Tukutane is running...</p>
+	<h1>Welcome to Tukutane</h1>
+	<p>Connect with fellow students and discover amazing events on campus!</p>
+	<a href="{{ url_for('main.signup') }}">
+		<button style="background: goldenrod; color: #000044; border: none; padding: 10px 20px; margin: 10px; cursor: pointer;">Sign Up</button>
+	</a>
+	<a href="{{ url_for('main.login') }}">
+		<button style="background: #28a745; color: white; border: none; padding: 10px 20px; margin: 10px; cursor: pointer;">Login</button>
+	</a>
 </body>
 </html>

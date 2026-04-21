@@ -1,0 +1,29 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Event RSVPs</title>
+    <link rel="stylesheet" href="{{url_for('static', filename='css/dashboard.css')}}">
+</head>
+<body>
+    <header>
+        <h1>RSVPs for {{ event.title }}</h1>
+        <a href="{{ url_for('main.organizer') }}">Back to Organizer Dashboard</a> | 
+        <a href="{{ url_for('main.logout') }}">Logout</a>
+    </header>
+
+    {% with messages = get_flashed_messages() %}
+      {% if messages %}<p style="color: goldenrod;">{{ messages[0] }}</p>{% endif %}
+    {% endwith %}
+
+    <h2>Confirmed Attendees</h2>
+    {% if rsvps %}
+    <ul>
+        {% for rsvp in rsvps %}
+        <li>{{ rsvp.user.name }} ({{ rsvp.user.email }}) - RSVP'd on {{ rsvp.timestamp.strftime('%Y-%m-%d %H:%M') }}</li>
+        {% endfor %}
+    </ul>
+    {% else %}
+    <p>No confirmed RSVPs yet.</p>
+    {% endif %}
+</body>
+</html>

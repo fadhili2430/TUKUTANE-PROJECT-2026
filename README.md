@@ -1,33 +1,47 @@
 # TUKUTANE-PROJECT-2026
 ## A SOCIAL EVENT MANAGEMENT APP
 
-## Instructions on Setting up Your Environment And Run *TUKUTANE*:
-1. Opening Your Terminal:
-- Linux: `Win+Shift+T` is the keyboard shortcut or search for _terminal_ on your Desktop Environment.
-- Windows: `Win+X` and select _Command Prompt_ or _Powershell_ whichever you are comfortable with or alternatively `Win+R` and type either `powershell` or `cmd` and click `Enter`.
-(That is what we will be calling a _terminal_)
+### Setup Instructions
 
-2. Cloning The Repo:
-- On your terminal run `git clone "https://github.com/fadhili2430/TUKUTANE-PROJECT-2026.git"` in any directory in your home directory.
-- Change into the directory named _TUKUTANE-PROJECT-2026_: `cd TUKUTANE-PROJECT-2026`.
-- Set up your _environment_: `python -m venv venv` (**python** can be python/python2/python3 depending on your _python_ binary version)
+1. **Clone the Repository**
+   ```
+   git clone https://github.com/fadhili2430/TUKUTANE-PROJECT-2026.git
+   cd TUKUTANE-PROJECT-2026
+   ```
 
-3. Activate Environment:
-- Windows: Again, on your terminal: run: `venv\Scripts\activate`.
-- Mac/Linux: Run: `. venv/bin/activate` or `source venv/bin/activate`.
-- Install **Flask** module by running `pip install -r requirements.txt` in your terminal. (can be _pip_ or _pip3_)
+2. **Set up Virtual Environment**
+   ```
+   python -m venv venv
+   ```
 
-4. Start the web app
+3. **Activate the Environment**
+   - Windows: `venv\Scripts\activate`
+   - Mac/Linux: `source venv/bin/activate`
 
-On your terminal, run: `python run.py` or `flask --app run.py run` (Again, can be python or python2 or python3)
+4. **Install Dependencies**
+   ```
+   pip install -r requirements.txt
+   ```
 
----
-If the above steps didn't work for you, it's probably because you do not have python installed. First check if you have python installed by searching it up on your computer or running `python -v` or `python --version` (python or python3). If the above command fails:
-- Windows: You can visit [Python's Main Page](https://python.org) and install it, then redo the steps.
-- Linux: Run `sudo apt install python -y` or whichever version you want.
+5. **Set up the Database**
+   ```
+   flask db upgrade
+   ```
 
-If these fail, you can contact the repo owner: _placeholder for Fadhili's email_
+6. **Run the Application**
+   ```
+   python run.py
+   ```
 
----
+   The application will start and automatically populate initial data.
 
-5. Visit the webpage on [PLACEHOLDER](http://127.0.0.1:5000) and enjoy the Web App.
+7. **Access the App**
+   Visit http://127.0.0.1:5000 in your browser.
+
+### Prerequisites
+- Python 3.x installed
+- Git
+
+If you encounter issues, ensure Python is installed and try the commands with python3 if python doesn't work.
+
+Contact the repo owner for support.

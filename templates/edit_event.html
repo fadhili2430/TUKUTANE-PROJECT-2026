@@ -1,0 +1,58 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Edit Event</title>
+    <link rel="stylesheet" href="{{url_for('static', filename='css/dashboard.css')}}">
+</head>
+<body>
+    <header>
+        <h1>Edit Event</h1>
+        <a href="{{ url_for('main.organizer') }}">Back to Organizer Dashboard</a> | 
+        <a href="{{ url_for('main.logout') }}">Logout</a>
+    </header>
+
+    {% with messages = get_flashed_messages() %}
+      {% if messages %}<p style="color: goldenrod;">{{ messages[0] }}</p>{% endif %}
+    {% endwith %}
+
+    <form method="POST">
+        {{ form.hidden_tag() }}
+        <div>
+            {{ form.title.label }}<br>
+            {{ form.title() }}<br>
+            {% for error in form.title.errors %}<span style="color: red;">{{ error }}</span><br>{% endfor %}
+        </div>
+        <div>
+            {{ form.description.label }}<br>
+            {{ form.description() }}<br>
+            {% for error in form.description.errors %}<span style="color: red;">{{ error }}</span><br>{% endfor %}
+        </div>
+        <div>
+            {{ form.activity.label }}<br>
+            {{ form.activity() }}<br>
+            {% for error in form.activity.errors %}<span style="color: red;">{{ error }}</span><br>{% endfor %}
+        </div>
+        <div>
+            {{ form.campus_area.label }}<br>
+            {{ form.campus_area() }}<br>
+            {% for error in form.campus_area.errors %}<span style="color: red;">{{ error }}</span><br>{% endfor %}
+        </div>
+        <div>
+            {{ form.date.label }}<br>
+            {{ form.date() }}<br>
+            {% for error in form.date.errors %}<span style="color: red;">{{ error }}</span><br>{% endfor %}
+        </div>
+        <div>
+            {{ form.time.label }}<br>
+            {{ form.time() }}<br>
+            {% for error in form.time.errors %}<span style="color: red;">{{ error }}</span><br>{% endfor %}
+        </div>
+        <div>
+            {{ form.max_attendees.label }}<br>
+            {{ form.max_attendees() }}<br>
+            {% for error in form.max_attendees.errors %}<span style="color: red;">{{ error }}</span><br>{% endfor %}
+        </div>
+        {{ form.submit() }}
+    </form>
+</body>
+</html>
