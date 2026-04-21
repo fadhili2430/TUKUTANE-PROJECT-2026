@@ -1,0 +1,114 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <title>Create Event - Tukutane</title>
+    <meta charset='utf-8'>
+    <meta name="viewport" content="width=device-width,initial-scale=1">
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="{{url_for('static', filename='css/dashboard.css')}}">
+</head>
+<body class="bg-light">
+<div class="container mt-5">
+<div class="row justify-content-center">
+<div class="col-md-8">
+<div class="card">
+<div class="card-header">
+<h1 class="h3 mb-0">Create New Event</h1>
+</div>
+<div class="card-body">
+<form action="{{ url_for('main.create_event') }}" method="POST">
+{{ form.csrf_token() }}
+<div class="mb-3">
+{{ form.title.label(class="form-label") }}
+{{ form.title(class="form-control") }}
+{% if form.title.errors %}
+<div class="text-danger">
+{% for error in form.title.errors %}
+{{ error }}<br>
+{% endfor %}
+</div>
+{% endif %}
+</div>
+<div class="mb-3">
+{{ form.description.label(class="form-label") }}
+{{ form.description(class="form-control") }}
+{% if form.description.errors %}
+<div class="text-danger">
+{% for error in form.description.errors %}
+{{ error }}<br>
+{% endfor %}
+</div>
+{% endif %}
+</div>
+<div class="mb-3">
+{{ form.activity.label(class="form-label") }}
+{{ form.activity(class="form-select") }}
+{% if form.activity.errors %}
+<div class="text-danger">
+{% for error in form.activity.errors %}
+{{ error }}<br>
+{% endfor %}
+</div>
+{% endif %}
+</div>
+<div class="mb-3">
+{{ form.campus_area.label(class="form-label") }}
+{{ form.campus_area(class="form-select") }}
+{% if form.campus_area.errors %}
+<div class="text-danger">
+{% for error in form.campus_area.errors %}
+{{ error }}<br>
+{% endfor %}
+</div>
+{% endif %}
+</div>
+<div class="row">
+<div class="col-md-6 mb-3">
+{{ form.date.label(class="form-label") }}
+{{ form.date(class="form-control") }}
+{% if form.date.errors %}
+<div class="text-danger">
+{% for error in form.date.errors %}
+{{ error }}<br>
+{% endfor %}
+</div>
+{% endif %}
+</div>
+<div class="col-md-6 mb-3">
+{{ form.time.label(class="form-label") }}
+{{ form.time(class="form-control") }}
+{% if form.time.errors %}
+<div class="text-danger">
+{% for error in form.time.errors %}
+{{ error }}<br>
+{% endfor %}
+</div>
+{% endif %}
+</div>
+</div>
+<div class="mb-3">
+{{ form.max_attendees.label(class="form-label") }}
+{{ form.max_attendees(class="form-control") }}
+{% if form.max_attendees.errors %}
+<div class="text-danger">
+{% for error in form.max_attendees.errors %}
+{{ error }}<br>
+{% endfor %}
+</div>
+{% endif %}
+</div>
+<div class="d-grid">
+{{ form.submit(class="btn btn-primary") }}
+</div>
+</form>
+</div>
+<div class="card-footer">
+<a href="{{ url_for('main.dashboard') }}" class="btn btn-secondary">Back to Dashboard</a>
+</div>
+</div>
+</div>
+</div>
+</div>
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+</body>
+</html>
