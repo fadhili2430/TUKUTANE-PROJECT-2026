@@ -6,9 +6,12 @@
 </head>
 <body>
     <header>
-        <h1>Welcome, {{ current_user.username }}</h1>
+        <h1>Welcome, {{ current_user.name }}</h1>
         <a href="{{ url_for('main.create_event') }}">Create Event</a> | 
         <a href="{{ url_for('main.logout') }}">Logout</a>
+        {% if current_user.events_organised %}
+        | <a href="{{ url_for('main.profile') }}">Profile</a> | <a href="{{ url_for('main.organizer_dashboard') }}">Organizer Dashboard</a>
+        {% endif %}
     </header>
 
     {% with messages = get_flashed_messages() %}
@@ -16,14 +19,36 @@
     {% endwith %}
 
     <h2>Discover Events</h2>
+    <form method="GET" action="{{ url_for('main.dashboard') }}">
+        <label for="activity">Activity:</label>
+        <select name="activity" id="activity">
+            <option value="">All</option>
+            {% for activity in activities %}
+            <option value="{{ activity.id }}" {% if request.args.get('activity') == activity.id|string %}selected{% endif %}>{{ activity.name }}</option>
+            {% endfor %}
+        </select>
+        <label for="campus_area">Campus Area:</label>
+        <select name="campus_area" id="campus_area">
+            <option value="">All</option>
+            {% for area in campus_areas %}
+            <option value="{{ area.id }}" {% if request.args.get('campus_area') == area.id|string %}selected{% endif %}>{{ area.name }}</option>
+            {% endfor %}
+        </select>
+        <button type="submit">Filter</button>
+    </form>
     <div class="events-container" style="display: flex; flex-wrap: wrap; gap: 20px;">
         {% for event in events %}
         <div class="event-card" style="border: 1px solid #fafafa; padding: 15px; width: 300px; border-radius: 10px;">
             <h3>{{ event.title }}</h3>
-            <p><strong>Type:</strong> {{ event.category }}</p>
-            <p><strong>Where:</strong> {{ event.location }}</p>
-            <p><strong>When:</strong> {{ event.event_date.strftime('%Y-%m-%d %H:%M') }}</p>
-            <p><strong>Spots:</strong> {{ event.rsvps|length }} / {{ event.capacity }}</p>
+            <p><strong>Activity:</strong> {{ event.activity.name }}</p>
+            <p><strong>Campus Area:</strong> {{ event.campus_area.name }}</p>
+            <p><strong>Date:</strong> {{ event.date }}</p>
+            <p><strong>Time:</strong> {{ event.time }}</p>
+            <p><strong>Max Attendees:</strong> {{ event.max_attendees }}</p>
+            {% set rsvp = event.rsvps | selectattr('user_id', 'equalto', current_user.id) | first %}
+            {% if rsvp %}
+            <p><strong>RSVP Status:</strong> {{ rsvp.status }}</p>
+            {% endif %}
             
             {% if event.organiser_id == current_user.id %}
                 <button disabled>You are Organiser</button>

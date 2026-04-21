@@ -1,0 +1,84 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Create Event</title>
+    <meta charset='utf-8'>
+    <meta name="viewport" content="width=device-width,initial-scale=1">
+    <link rel="stylesheet" href="{{url_for('static', filename='css/dashboard.css')}}">
+</head>
+<body>
+    <h1>Create New Event</h1>
+    <a href="{{ url_for('main.dashboard') }}">Back to Dashboard</a>
+
+    <div class='form'>
+    <form action="{{ url_for('main.create_event') }}" method="POST">
+        {{ form.csrf_token() }}
+        {{ form.title.label }}<br>
+        {{ form.title() }}<br>
+        {% if form.title.errors %}
+            <ul class="errors">
+                {% for error in form.title.errors %}
+                    <li>{{ error }}</li>
+                {% endfor %}
+            </ul>
+        {% endif %}
+        {{ form.description.label }}<br>
+        {{ form.description() }}<br>
+        {% if form.description.errors %}
+            <ul class="errors">
+                {% for error in form.description.errors %}
+                    <li>{{ error }}</li>
+                {% endfor %}
+            </ul>
+        {% endif %}
+        {{ form.activity.label }}<br>
+        {{ form.activity() }}<br>
+        {% if form.activity.errors %}
+            <ul class="errors">
+                {% for error in form.activity.errors %}
+                    <li>{{ error }}</li>
+                {% endfor %}
+            </ul>
+        {% endif %}
+        {{ form.campus_area.label }}<br>
+        {{ form.campus_area() }}<br>
+        {% if form.campus_area.errors %}
+            <ul class="errors">
+                {% for error in form.campus_area.errors %}
+                    <li>{{ error }}</li>
+                {% endfor %}
+            </ul>
+        {% endif %}
+        {{ form.date.label }}<br>
+        {{ form.date() }}<br>
+        {% if form.date.errors %}
+            <ul class="errors">
+                {% for error in form.date.errors %}
+                    <li>{{ error }}</li>
+                {% endfor %}
+            </ul>
+        {% endif %}
+        {{ form.time.label }}<br>
+        {{ form.time() }}<br>
+        {% if form.time.errors %}
+            <ul class="errors">
+                {% for error in form.time.errors %}
+                    <li>{{ error }}</li>
+                {% endfor %}
+            </ul>
+        {% endif %}
+        {{ form.max_attendees.label }}<br>
+        {{ form.max_attendees() }}<br>
+        {% if form.max_attendees.errors %}
+            <ul class="errors">
+                {% for error in form.max_attendees.errors %}
+                    <li>{{ error }}</li>
+                {% endfor %}
+            </ul>
+        {% endif %}
+        {{ form.submit() }}
+    </form>
+    </div>
+
+</body>
+</html>

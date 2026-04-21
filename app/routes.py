@@ -48,8 +48,17 @@ def login():
 @login_required
 def dashboard():
     # Goal: Allow students to discover events [cite: 27, 34]
-    events = Event.query.all()
-    return render_template("dashboard.html", events=events)
+    activity_id = request.args.get('activity')
+    campus_area_id = request.args.get('campus_area')
+    query = Event.query
+    if activity_id:
+        query = query.filter_by(activity_id=activity_id)
+    if campus_area_id:
+        query = query.filter_by(campus_area_id=campus_area_id)
+    events = query.all()
+    activities = Activity.query.all()
+    campus_areas = CampusArea.query.all()
+    return render_template("dashboard.html", events=events, activities=activities, campus_areas=campus_areas)
 
 @main.route("/event/new", methods=["GET", "POST"])
 @login_required
@@ -123,7 +132,7 @@ def cancel_rsvp(event_id):
 @login_required
 def organizer_dashboard():
     events = Event.query.filter_by(organiser_id=current_user.id).all()
-    return render_template("organizer_dashboard.html", events=events)
+    return render_template("organizer.html", events=events)
 
 @main.route("/event/edit/<int:event_id>", methods=["GET", "POST"])
 @login_required
