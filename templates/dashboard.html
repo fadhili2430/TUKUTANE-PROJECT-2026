@@ -1,13 +1,39 @@
 <!DOCTYPE html>
 <html>
 <head>
-	<title>My Dashboard</title>
-	<meta charset='utf-8'>
-	<meta name="viewport" content="width=device-width,initial-scale=1">
-	<link rel="stylesheet" href="{{url_for('static', filename='css/dashboard.css')}}">
+    <title>Tukutane Dashboard</title>
+    <link rel="stylesheet" href="{{url_for('static', filename='css/dashboard.css')}}">
 </head>
 <body>
-	<h1>Welcome to Your Dashboard, {{current_user.username}}</h1>
-	<p>ID: {{current_user.id}}</p>
+    <header>
+        <h1>Welcome, {{ current_user.username }}</h1>
+        <a href="{{ url_for('main.create_event') }}">Create Event</a> | 
+        <a href="{{ url_for('main.logout') }}">Logout</a>
+    </header>
+
+    {% with messages = get_flashed_messages() %}
+      {% if messages %}<p style="color: goldenrod;">{{ messages[0] }}</p>{% endif %}
+    {% endwith %}
+
+    <h2>Discover Events</h2>
+    <div class="events-container" style="display: flex; flex-wrap: wrap; gap: 20px;">
+        {% for event in events %}
+        <div class="event-card" style="border: 1px solid #fafafa; padding: 15px; width: 300px; border-radius: 10px;">
+            <h3>{{ event.title }}</h3>
+            <p><strong>Type:</strong> {{ event.category }}</p>
+            <p><strong>Where:</strong> {{ event.location }}</p>
+            <p><strong>When:</strong> {{ event.event_date.strftime('%Y-%m-%d %H:%M') }}</p>
+            <p><strong>Spots:</strong> {{ event.rsvps|length }} / {{ event.capacity }}</p>
+            
+            {% if event.organiser_id == current_user.id %}
+                <button disabled>You are Organiser</button>
+            {% else %}
+                <a href="{{ url_for('main.rsvp', event_id=event.id) }}">
+                    <button style="background: goldenrod; cursor: pointer;">RSVP Now</button>
+                </a>
+            {% endif %}
+        </div>
+        {% endfor %}
+    </div>
 </body>
 </html>

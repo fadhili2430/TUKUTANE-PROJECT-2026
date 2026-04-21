@@ -7,26 +7,34 @@ from datetime import datetime, UTC
 def load_user(user_id):
     return User.query.get(int(user_id))
 
-user_interests = db.Table('user_interests',
+# Association table for User Activities 
+user_activities = db.Table('user_activities',
     db.Column('user_id', db.Integer, db.ForeignKey('user.id'), primary_key=True),
-    db.Column('interest_id', db.Integer, db.ForeignKey('interest.id'), primary_key=True)
+    db.Column('activity_id', db.Integer, db.ForeignKey('activity.id'), primary_key=True)
 )
 
-class User(db.Model, UserMixin):
-    """Table for student Accounts and Profiles"""
+class Activity(db.Model):
     id = db.Column(db.Integer, primary_key=True)
-    username = db.Column(db.String(50), unique=True, nullable=False)
-    password_hash = db.Column(db.String(128), nullable=False)
+    name = db.Column(db.String(50), unique=True, nullable=False)
+    description = db.Column(db.Text, nullable=True)
 
+class CampusArea(db.Model):
+    id = db.Column(db.Integer, primary_key=True)
+    name = db.Column(db.String(50), unique=True, nullable=False)
+    description = db.Column(db.Text, nullable=True)
+
+class User(db.Model, UserMixin):
+    id = db.Column(db.Integer, primary_key=True)
+    name = db.Column(db.String(50), nullable=False)
+    email = db.Column(db.String(120), unique=True, nullable=False)
+    password_hash = db.Column(db.String(128), nullable=False)
+    campus_area_id = db.Column(db.Integer, db.ForeignKey('campus_area.id'), nullable=False)
+    
     # Relationships
+    activities = db.relationship('Activity', secondary=user_activities, backref=db.backref('users', lazy='dynamic'))
     events_organised = db.relationship('Event', backref='organiser', lazy=True)
-    interests = db.relationship('Interest', secondary=user_interests, backref=db.backref('users', lazy='dynamic'))
     rsvps = db.relationship('RSVP', backref='user', lazy=True)
 
-    def __repr__(self):
-         return f'<User {self.username}>'
-
-    # Set and Check passwords functions within the Class
     def set_password(self, password):
         self.password_hash = generate_password_hash(password)
 
@@ -34,39 +42,28 @@ class User(db.Model, UserMixin):
         return check_password_hash(self.password_hash, password)
 
 class Event(db.Model):
-    """Table for Campus Meetups and Social Activities"""
     id = db.Column(db.Integer, primary_key=True)
     title = db.Column(db.String(100), nullable=False)
     description = db.Column(db.Text, nullable=True)
-    location = db.Column(db.String(100), nullable=False)
-    capacity = db.Column(db.Integer, nullable=False)
-    category = db.Column(db.String(50), nullable=False)
-
+    activity_id = db.Column(db.Integer, db.ForeignKey('activity.id'), nullable=False)
+    campus_area_id = db.Column(db.Integer, db.ForeignKey('campus_area.id'), nullable=False)
+    date = db.Column(db.Date, nullable=False)
+    time = db.Column(db.Time, nullable=False)
+    max_attendees = db.Column(db.Integer, nullable=False)
+    
     organiser_id = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=False)
+    
+    rsvps = db.relationship('RSVP', backref='event', lazy=True, cascade="all, delete-orphan")
 
-    rsvps = db.relationship('RSVP', backref='event', lazy=True)
-
-    date_posted = db.Column(db.DateTime, nullable=False, default=datetime.now(UTC))
-    event_date = db.Column(db.DateTime, nullable=False)
-
-    def __repr__(self):
-        return f'<Event {self.title}>'
+    def is_full(self):
+        """Logic to enforce capacity"""
+        return len([rsvp for rsvp in self.rsvps if rsvp.status == 'confirmed']) >= self.max_attendees
 
 class RSVP(db.Model):
-    """Attendance and Capacity Control Logic"""
     id = db.Column(db.Integer, primary_key=True)
     user_id = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=False)
     event_id = db.Column(db.Integer, db.ForeignKey('event.id'), nullable=False)
-
-    __table_args__= (db.UniqueConstraint('user_id', 'event_id', name='_user_event_uc'),)
-
-    def __repr__(self):
-        return f'<RSVP User:{self.user_id} Event:{self.event_id}>'
-
-class Interest(db.Model):
-    id = db.Column(db.Integer, primary_key=True)
-    name = db.Column(db.String(50), unique=True, nullable=False)
-
-    def __repr__(self):
-        return f'<Interest {self.name}>'
-
+    status = db.Column(db.String(20), default='confirmed')  # confirmed or cancelled
+    timestamp = db.Column(db.DateTime, default=datetime.now(UTC))
+    
+    __table_args__ = (db.UniqueConstraint('user_id', 'event_id', name='_user_event_uc'),)
