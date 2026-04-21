@@ -31,6 +31,7 @@ class User(db.Model, UserMixin):
     campus_area_id = db.Column(db.Integer, db.ForeignKey('campus_area.id'), nullable=False)
     
     # Relationships
+    campus_area = db.relationship('CampusArea', backref='users')
     activities = db.relationship('Activity', secondary=user_activities, backref=db.backref('users', lazy='dynamic'))
     events_organised = db.relationship('Event', backref='organiser', lazy=True)
     rsvps = db.relationship('RSVP', backref='user', lazy=True)
@@ -53,6 +54,9 @@ class Event(db.Model):
     
     organiser_id = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=False)
     
+    # Relationships
+    activity = db.relationship('Activity', backref='events')
+    campus_area = db.relationship('CampusArea', backref='events')
     rsvps = db.relationship('RSVP', backref='event', lazy=True, cascade="all, delete-orphan")
 
     def is_full(self):
