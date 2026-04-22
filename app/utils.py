@@ -14,7 +14,7 @@ def populate_initial_data():
     for act in activities:
         if not Activity.query.filter_by(name=act['name']).first():
             activity = Activity(name=act['name'], description=act['description'])
-            db.session.add(activity)
+            db.session.add(activity) # it is a good idea to add the update to the session first and later commit
     
     # Populate Campus Areas
     areas = [

@@ -7,31 +7,32 @@ from datetime import datetime
 
 main = Blueprint('main', __name__)
 
-@main.route("/")
+@main.route("/") # root url endpoint
 def home():
     return render_template("home.html")
 
 @main.route("/signup", methods=["GET", "POST"])
 def signup():
-    form = SignupForm()
+    form = SignupForm() # classes simplify our job
     if form.validate_on_submit():
-        if User.query.filter_by(email=form.email.data).first():
+        if User.query.filter_by(email=form.email.data).first(): # existing user
             flash("Email already registered!")
-            return redirect(url_for("main.signup"))
+            return redirect(url_for("main.login")) # TODO: Change this to main.login
         
+        # else: create a new user
         user = User(
             name=form.name.data,
             email=form.email.data,
             campus_area_id=form.campus_area.data
         )
-        user.set_password(form.password.data)
+        user.set_password(form.password.data) # call the method to set the pass - automatically hashed
         activity = Activity.query.get(form.activities.data)
         user.activities.append(activity)
         db.session.add(user)
         db.session.commit()
-        login_user(user)
+        login_user(user) # attempt to login user
         return redirect(url_for("main.dashboard"))
-    return render_template("signup.html", form=form)
+    return render_template("signup.html", form=form) # otherwise show the doc over and over
 
 @main.route("/login", methods=["GET", "POST"])
 def login():
@@ -45,9 +46,10 @@ def login():
     return render_template("login.html", form=form)
 
 @main.route("/dashboard")
-@login_required
+@login_required # ensure the dashboard is only accessed if the user is logged in
 def dashboard():
-    # Goal: Allow students to discover events [cite: 27, 34]
+    # Goal: Allow students to discover events and/or create events
+    # TODO: Only allow some ppl with say higher credit score to create events
     activity_id = request.args.get('activity')
     campus_area_id = request.args.get('campus_area')
     query = Event.query
@@ -84,8 +86,8 @@ def create_event():
 @main.route("/rsvp/<int:event_id>")
 @login_required
 def rsvp(event_id):
-    # Goal: RSVP system with capacity enforcement [cite: 35, 60]
-    event = Event.query.get_or_404(event_id)
+    # Goal: RSVP system with capacity enforcement
+    event = Event.query.get_or_404(event_id) # 404 Not Found
     if event.is_full():
         flash("Event is full!")
     elif RSVP.query.filter_by(user_id=current_user.id, event_id=event_id).first():
@@ -97,7 +99,7 @@ def rsvp(event_id):
         flash("See you there!")
     return redirect(url_for("main.dashboard"))
 
-@main.route("/profile", methods=["GET", "POST"])
+@main.route("/profile", methods=["GET", "POST"]) # can be improved 
 @login_required
 def profile():
     form = ProfileForm()
@@ -130,7 +132,7 @@ def cancel_rsvp(event_id):
 
 @main.route("/organizer")
 @login_required
-def organizer_dashboard():
+def organizer():
     events = Event.query.filter_by(organiser_id=current_user.id).all()
     return render_template("organizer.html", events=events)
 
@@ -173,7 +175,7 @@ def cancel_event(event_id):
     db.session.delete(event)
     db.session.commit()
     flash("Event cancelled!")
-    return redirect(url_for("main.organizer_dashboard"))
+    return redirect(url_for("main.organizer"))
 
 @main.route("/logout")
 def logout():
@@ -189,3 +191,8 @@ def view_rsvps(event_id):
         return redirect(url_for("main.dashboard"))
     rsvps = RSVP.query.filter_by(event_id=event_id, status='confirmed').all()
     return render_template("rsvps.html", event=event, rsvps=rsvps)
+
+@main.route('/organizer/dashboard', methods=['GET'])
+def organizer_dashboard():
+    events = Event.query.filter_by(organiser_id=current_user.id).all()
+    return render_template('organizer_dashboard.html', events=events)

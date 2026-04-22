@@ -3,7 +3,7 @@ from . import db, login_manager
 from werkzeug.security import generate_password_hash, check_password_hash
 from datetime import datetime, UTC
 
-@login_manager.user_loader
+@login_manager.user_loader # this is how we create/load our app user context
 def load_user(user_id):
     return User.query.get(int(user_id))
 
@@ -51,7 +51,6 @@ class Event(db.Model):
     date = db.Column(db.Date, nullable=False)
     time = db.Column(db.Time, nullable=False)
     max_attendees = db.Column(db.Integer, nullable=False)
-    
     organiser_id = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=False)
     
     # Relationships

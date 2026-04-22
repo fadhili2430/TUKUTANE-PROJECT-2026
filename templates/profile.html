@@ -1,76 +1,122 @@
 <!DOCTYPE html>
-<html>
+<html lang="en">
 <head>
     <title>Profile - Tukutane</title>
+    <meta charset='utf-8'>
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
     <link rel="stylesheet" href="{{ url_for('static', filename='css/dashboard.css') }}">
 </head>
 <body>
-    <header>
-        <h1>Profile</h1>
-        <a href="{{ url_for('main.dashboard') }}">Back to Dashboard</a> |
-        <a href="{{ url_for('main.logout') }}">Logout</a>
-    </header>
+<nav class="navbar navbar-expand-lg navbar-dark">
+<div class="container">
+<a class="navbar-brand" href="{{ url_for('main.home') }}"><strong>Tukutane</strong></a>
+<button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav">
+<span class="navbar-toggler-icon"></span>
+</button>
+<div class="collapse navbar-collapse" id="navbarNav">
+<div class="navbar-nav ms-auto">
+<a class="nav-link" href="{{ url_for('main.dashboard') }}">Dashboard</a>
+<a class="nav-link" href="{{ url_for('main.logout') }}">Logout</a>
+</div>
+</div>
+</div>
+</nav>
 
-    {% with messages = get_flashed_messages() %}
-      {% if messages %}<p style="color: goldenrod;">{{ messages[0] }}</p>{% endif %}
-    {% endwith %}
+<div class="container py-5">
+<div class="row mb-4">
+<div class="col-md-8 mx-auto">
+{% with messages = get_flashed_messages() %}
+{% if messages %}
+<div class="alert alert-success alert-dismissible fade show" role="alert">
+{{ messages[0] }}
+<button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+</div>
+{% endif %}
+{% endwith %}
 
-    <h2>Current Profile Information</h2>
-    <div class="profile-info">
-        <p><strong>Name:</strong> {{ current_user.name }}</p>
-        <p><strong>Email:</strong> {{ current_user.email }}</p>
-        <p><strong>Campus Area:</strong> {{ current_user.campus_area.name }}</p>
-        <p><strong>Activities:</strong> {{ current_user.activities | join(', ', attribute='name') }}</p>
-    </div>
+<h1 class="mb-4">My Profile</h1>
 
-    <h2>Update Profile</h2>
-    <form method="POST" action="{{ url_for('main.profile') }}">
-        {{ form.csrf_token() }}
-        <div>
-            {{ form.name.label }}<br>
-            {{ form.name() }}<br>
-            {% if form.name.errors %}
-                <ul class="errors">
-                    {% for error in form.name.errors %}
-                        <li>{{ error }}</li>
-                    {% endfor %}
-                </ul>
-            {% endif %}
-        </div>
-        <div>
-            {{ form.email.label }}<br>
-            {{ form.email() }}<br>
-            {% if form.email.errors %}
-                <ul class="errors">
-                    {% for error in form.email.errors %}
-                        <li>{{ error }}</li>
-                    {% endfor %}
-                </ul>
-            {% endif %}
-        </div>
-        <div>
-            {{ form.campus_area.label }}<br>
-            {{ form.campus_area() }}<br>
-            {% if form.campus_area.errors %}
-                <ul class="errors">
-                    {% for error in form.campus_area.errors %}
-                        <li>{{ error }}</li>
-                    {% endfor %}
-                </ul>
-            {% endif %}
-        </div>
-        <div>
-            {{ form.activities.label }}<br>
-            {{ form.activities() }}<br>
-            {% if form.activities.errors %}
-                <ul class="errors">
-                    {% for error in form.activities.errors %}
-                        <li>{{ error }}</li>
-                    {% endfor %}
-                </ul>
-            {% endif %}
-        </div>
-        {{ form.submit() }}
-    </form>
+<div class="card mb-4">
+<div class="card-header">
+<h5 class="mb-0">Current Profile Information</h5>
+</div>
+<div class="card-body">
+<div class="row">
+<div class="col-md-6 mb-3">
+<p><strong>Name:</strong></p>
+<p class="text-muted">{{ current_user.name }}</p>
+</div>
+<div class="col-md-6 mb-3">
+<p><strong>Email:</strong></p>
+<p class="text-muted">{{ current_user.email }}</p>
+</div>
+<div class="col-md-6 mb-3">
+<p><strong>Campus Area:</strong></p>
+<p class="text-muted">{{ current_user.campus_area.name }}</p>
+</div>
+<div class="col-md-6 mb-3">
+<p><strong>Interests (Activities):</strong></p>
+<p class="text-muted">{{ current_user.activities | join(', ', attribute='name') }}</p>
+</div>
+</div>
+</div>
+</div>
+
+<div class="card">
+<div class="card-header">
+<h5 class="mb-0">Update Profile Information</h5>
+</div>
+<div class="card-body">
+<form method="POST" action="{{ url_for('main.profile') }}">
+{{ form.csrf_token() }}
+<div class="mb-3">
+{{ form.name.label(class="form-label") }}
+{{ form.name(class="form-control") }}
+{% if form.name.errors %}
+<div class="text-danger">
+{% for error in form.name.errors %}<small>{{ error }}</small><br>{% endfor %}
+</div>
+{% endif %}
+</div>
+<div class="mb-3">
+{{ form.email.label(class="form-label") }}
+{{ form.email(class="form-control") }}
+{% if form.email.errors %}
+<div class="text-danger">
+{% for error in form.email.errors %}<small>{{ error }}</small><br>{% endfor %}
+</div>
+{% endif %}
+</div>
+<div class="mb-3">
+{{ form.campus_area.label(class="form-label") }}
+{{ form.campus_area(class="form-select") }}
+{% if form.campus_area.errors %}
+<div class="text-danger">
+{% for error in form.campus_area.errors %}<small>{{ error }}</small><br>{% endfor %}
+</div>
+{% endif %}
+</div>
+<div class="mb-3">
+{{ form.activities.label(class="form-label") }}
+{{ form.activities(class="form-select") }}
+<small class="text-muted d-block mt-2">Hold Ctrl/Cmd to select multiple activities</small>
+{% if form.activities.errors %}
+<div class="text-danger">
+{% for error in form.activities.errors %}<small>{{ error }}</small><br>{% endfor %}
+</div>
+{% endif %}
+</div>
+<div class="d-grid gap-2 d-sm-flex justify-content-sm-end">
+{{ form.submit(class="btn btn-primary") }}
+<a href="{{ url_for('main.dashboard') }}" class="btn btn-outline-secondary">Cancel</a>
+</div>
+</form>
+</div>
+</div>
+</div>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
 </body>
 </html>

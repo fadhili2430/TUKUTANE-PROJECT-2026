@@ -1,0 +1,41 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <title>My RSVPs - Tukutane</title>
+    <meta charset='utf-8'>
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="{{url_for('static', filename='css/dashboard.css')}}">
+</head>
+<body class="bg-light">
+<nav class="navbar navbar-expand-lg navbar-dark bg-primary">
+<div class="container">
+<a class="navbar-brand" href="{{ url_for('main.home') }}"><strong>Tukutane</strong></a>
+<button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav">
+<span class="navbar-toggler-icon"></span>
+</button>
+<div class="collapse navbar-collapse" id="navbarNav">
+<div class="navbar-nav ms-auto">
+<a class="nav-link" href="{{ url_for('main.dashboard') }}">Dashboard</a>
+<a class="nav-link" href="{{ url_for('main.logout') }}">Logout</a>
+</div>
+</div>
+</div>
+</nav>
+
+<div class="container py-5">
+<div class="row">
+<div class="col-md-8 mx-auto text-center">
+<div class="mb-4">
+<h1 class="display-4 mb-3">Coming Soon</h1>
+<p class="lead">My RSVPs feature is under construction!</p>
+<p class="text-muted mb-4">We're working hard to bring you the best experience. Check back soon to see all your event RSVPs in one place.</p>
+<a href="{{ url_for('main.dashboard') }}" class="btn btn-primary btn-lg">Back to Dashboard</a>
+</div>
+</div>
+</div>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+</body>
+</html>
