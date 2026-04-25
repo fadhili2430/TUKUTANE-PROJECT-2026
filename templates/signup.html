@@ -63,7 +63,7 @@
 {% endif %}
 </div>
 <div class="mb-3">
-{{ form.activities.label(class="form-label") }}
+{{ form.activities.label(class="form-label") }} <span class="form-text" style="color: blue;">Hold Ctrl (or Cmd on Mac) to select multiple interests!</span>
 {{ form.activities(class="form-select") }}
 {% if form.activities.errors %}
 <div class="text-danger">

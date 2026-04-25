@@ -26,8 +26,10 @@ def signup():
             campus_area_id=form.campus_area.data
         )
         user.set_password(form.password.data) # call the method to set the pass - automatically hashed
-        activity = Activity.query.get(form.activities.data)
-        user.activities.append(activity)
+        for activity_id in form.activities.data:
+            activity = Activity.query.get(activity_id)
+            if activity:
+                user.activities.append(activity)
         db.session.add(user)
         db.session.commit()
         login_user(user) # attempt to login user
@@ -107,7 +109,11 @@ def profile():
         current_user.name = form.name.data
         current_user.email = form.email.data
         current_user.campus_area_id = form.campus_area.data
-        current_user.activities = [Activity.query.get(form.activities.data)]
+        current_user.activities = []
+        for activity_id in form.activities.data:
+            activity = Activity.query.get(activity_id)
+            if activity:
+                current_user.activities.append(activity)
         db.session.commit()
         flash("Profile updated!")
         return redirect(url_for("main.dashboard"))
@@ -116,7 +122,7 @@ def profile():
         form.email.data = current_user.email
         form.campus_area.data = current_user.campus_area_id
         if current_user.activities:
-            form.activities.data = current_user.activities[0].id
+            form.activities.data = [activity.id for activity in current_user.activities]
     return render_template("profile.html", form=form)
 
 
@@ -190,9 +196,10 @@ def view_rsvps(event_id):
         flash("Unauthorized!")
         return redirect(url_for("main.dashboard"))
     rsvps = RSVP.query.filter_by(event_id=event_id, status='confirmed').all()
-    return render_template("rsvps.html", event=event, rsvps=rsvps)
+    return render_template("view_rsvps.html", event=event, rsvps=rsvps)
 
 @main.route('/organizer/dashboard', methods=['GET'])
+@login_required
 def organizer_dashboard():
     events = Event.query.filter_by(organiser_id=current_user.id).all()
     return render_template('organizer_dashboard.html', events=events)

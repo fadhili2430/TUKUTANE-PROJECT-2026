@@ -23,8 +23,8 @@
                         <div class="card">
                             <div class="card-body">
                                 <h5 class="card-title">{{ event.title }}</h5>
-                                <p class="card-text text-muted">{{ event.activity }}</p>
-                                <p class="card-text text-muted">{{ event.campus_area }}</p>
+                                <p class="card-text text-muted">{{ event.activity.name }}</p>
+                                <p class="card-text text-muted">{{ event.campus_area.name }}</p>
                                 <div class="d-flex gap-2">
                                     <a href="{{ url_for('main.edit_event', event_id=event.id) }}" class="btn btn-sm btn-primary">Edit</a>
                                     <a href="{{ url_for('main.view_rsvps', event_id=event.id) }}" class="btn btn-sm btn-outline-primary">RSVPs</a>

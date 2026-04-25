@@ -14,9 +14,7 @@ def start_app():
                 template_folder=os.path.join(basedir, '../templates'), 
                 static_folder=os.path.join(basedir, '../static')) # handle a variety of user machines
     
-    app.config['SECRET_KEY'] = 'tung-tung-tung-sahur' # flask-login session cookies uses this TODO: remove this
-    app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///site.db'
-    app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
+    app.config.from_object('config.Config')
 
     # DB initialization
     db.init_app(app)
