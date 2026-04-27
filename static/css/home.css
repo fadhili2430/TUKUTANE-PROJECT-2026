@@ -112,6 +112,55 @@ footer p {
   color: #5c83b9 !important;
 }
 
+.how-it-works-section {
+  background: #07101d;
+  border-top: 1px solid #1f2937;
+  border-bottom: 1px solid #1f2937;
+}
+
+.step-number {
+  width: 60px;
+  height: 60px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 50%;
+  background: #2563eb;
+  color: #fff;
+  font-size: 1.5rem;
+  font-weight: bold;
+}
+
+.faq-section {
+  background: #020617;
+}
+
+.faq-section .accordion-item {
+  background: #07101d;
+  border: 1px solid #1f2937;
+}
+
+.faq-section .accordion-button {
+  background: #07101d;
+  color: #e2e8f0;
+  font-weight: 500;
+}
+
+.faq-section .accordion-button:not(.collapsed) {
+  background: #0f172a;
+  color: #57a3f9;
+}
+
+.faq-section .accordion-button::after {
+  filter: invert(1);
+}
+
+.faq-section .accordion-body {
+  background: #07101d;
+  color: #5c83b9;
+  border-top: 1px solid #1f2937;
+}
+
 @media (max-width: 768px) {
   .about-section,
   .features-section,

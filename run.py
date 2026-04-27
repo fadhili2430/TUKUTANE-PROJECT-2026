@@ -9,4 +9,4 @@ with app.app_context():
     populate_initial_data()
 
 if __name__ == "__main__":
-    app.run(debug=True) # TODO: host, port may be later included and debug flag removed
+    app.run(debug=False) # TODO: host, port may be later included and debug flag removed

@@ -41,9 +41,9 @@ body {
 
 .form-control:focus,
 .form-select:focus {
-  border-color: #2563eb;
+  border-color: #033297;
   box-shadow: 0 0 0 0.2rem rgba(37, 99, 235, 0.2);
-  background: #ffffff;
+  background: #05002e;
 }
 .h3 {
   color: #e2e8f0;
