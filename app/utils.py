@@ -3,12 +3,15 @@ from .models import Activity, CampusArea, db
 def populate_initial_data():
     # Populate Activities
     activities = [
-        {'name': 'Coding', 'description': 'Programming and software development activities'},
+        {'name': 'Coding', 'description': 'Programming and software development'},
         {'name': 'Hiking', 'description': 'Outdoor hiking and nature walks'},
         {'name': 'Chess', 'description': 'Board game strategy and competition'},
         {'name': 'Bowling', 'description': 'Bowling alley games and social events'},
         {'name': 'Pool', 'description': 'Pool table games and billiards'},
         {'name': 'Gaming', 'description': 'Video games and gaming sessions'},
+        {'name': 'Football', 'description': 'Football matches and training sessions'},
+        {'name': 'Basketball', 'description': 'Basketball games and practice'},
+        {'name': 'Study Group', 'description': 'Group study sessions and academic support'},
     ]
     
     for act in activities:
@@ -22,8 +25,10 @@ def populate_initial_data():
         {'name': 'Sports Centre', 'description': 'Sports facilities and gymnasium'},
         {'name': 'Library Grounds', 'description': 'Library and surrounding areas'},
         {'name': 'Cafeteria', 'description': 'Dining and social area'},
-        {'name': 'Lecture Hall A', 'description': 'Large lecture auditorium'},
+        {'name': 'Lecture Room 1', 'description': 'Lecture hall for classes and events'},
         {'name': 'Computer Lab', 'description': 'Computing and IT facilities'},
+        {'name': 'Student Union', 'description': 'Student activities and events'},
+        {'name': 'Dormitory Area', 'description': 'Student housing and residential area'},
     ]
     
     for area in areas:
