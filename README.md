@@ -36,7 +36,7 @@
    The application will start and automatically populate initial data.
 
 7. **Access the App**
-   Visit http://127.0.0.1:5000 in your browser.
+   Visit https://tukutane-project-2026--fadhilijonan19.replit.app/ in your browser.
 
 ### Prerequisites
 - Python 3.x installed
