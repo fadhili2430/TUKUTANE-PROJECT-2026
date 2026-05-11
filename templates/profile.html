@@ -37,33 +37,33 @@
 
 <h1 class="mb-4">My Profile</h1>
 
-<div class="card mb-4" style="color: wheat;">
+<div class="card mb-4">
 <div class="card-header">
 <h5 class="mb-0">Current Profile Information</h5>
 </div>
 <div class="card-body">
 <div class="row">
 <div class="col-md-6 mb-3">
-<p><strong>Name:</strong></p>
+<p class="text-muted mb-1"><strong class="text-white">Name</strong></p>
 <p class="text-muted">{{ current_user.name }}</p>
 </div>
 <div class="col-md-6 mb-3">
-<p><strong>Email:</strong></p>
+<p class="text-muted mb-1"><strong class="text-white">Email</strong></p>
 <p class="text-muted">{{ current_user.email }}</p>
 </div>
 <div class="col-md-6 mb-3">
-<p><strong>Campus Area:</strong></p>
+<p class="text-muted mb-1"><strong class="text-white">Campus Area</strong></p>
 <p class="text-muted">{{ current_user.campus_area.name }}</p>
 </div>
 <div class="col-md-6 mb-3">
-<p><strong>Interests (Activities):</strong></p>
+<p class="text-muted mb-1"><strong class="text-white">Interests</strong></p>
 <p class="text-muted">{{ current_user.activities | join(', ', attribute='name') }}</p>
 </div>
 </div>
 </div>
 </div>
 
-<div class="card" style="color: wheat;">
+<div class="card">
 <div class="card-header">
 <h5 class="mb-0">Update Profile Information</h5>
 </div>
