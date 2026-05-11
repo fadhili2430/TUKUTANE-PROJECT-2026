@@ -103,6 +103,13 @@ def rsvp(event_id):
         flash("See you there!")
     return redirect(url_for("main.dashboard"))
 
+@main.route("/rsvps")
+@login_required
+def rsvps():
+    # Display all RSVPs for the current user
+    user_rsvps = RSVP.query.filter_by(user_id=current_user.id, status='confirmed').all()
+    return render_template("rsvps.html", rsvps=user_rsvps)
+
 @main.route("/profile", methods=["GET", "POST"]) # can be improved 
 @login_required
 def profile():
