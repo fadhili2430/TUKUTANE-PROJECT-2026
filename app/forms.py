@@ -8,7 +8,7 @@ class SignupForm(FlaskForm):
     email = StringField('Email', validators=[DataRequired(), Email()])
     password = PasswordField('Password', validators=[DataRequired(), Length(min=6)])
     campus_area = SelectField('Campus Area', coerce=int, validators=[DataRequired()])
-    activities = SelectMultipleField('Interests', validators=[DataRequired()]) # user can now select multiple activities
+    activities = SelectMultipleField('Interests', coerce=int, validators=[DataRequired()])  # FIX: Add coerce=int
     submit = SubmitField('Sign Up')
 
     def __init__(self, *args, **kwargs):
@@ -40,7 +40,7 @@ class ProfileForm(FlaskForm):
     name = StringField('Name', validators=[DataRequired(), Length(min=2, max=50)])
     email = StringField('Email', validators=[DataRequired(), Email()])
     campus_area = SelectField('Campus Area', coerce=int, validators=[DataRequired()])
-    activities = SelectMultipleField('Interests', validators=[DataRequired()])
+    activities = SelectMultipleField('Interests', coerce=int, validators=[DataRequired()])  # FIX: Add coerce=int
     submit = SubmitField('Update Profile')
 
     def __init__(self, *args, **kwargs):

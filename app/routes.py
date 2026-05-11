@@ -17,7 +17,7 @@ def signup():
     if form.validate_on_submit():
         if User.query.filter_by(email=form.email.data).first(): # existing user
             flash("Email already registered!")
-            return redirect(url_for("main.login")) # TODO: Change this to main.login
+            return redirect(url_for("main.login"))
         
         # else: create a new user
         user = User(
@@ -26,10 +26,12 @@ def signup():
             campus_area_id=form.campus_area.data
         )
         user.set_password(form.password.data) # call the method to set the pass - automatically hashed
-        for activity_id in form.activities.data:
-            activity = Activity.query.get(activity_id)
-            if activity:
-                user.activities.append(activity)
+        # FIX: Add safety check for empty activities list
+        if form.activities.data:
+            for activity_id in form.activities.data:
+                activity = Activity.query.get(activity_id)
+                if activity:
+                    user.activities.append(activity)
         db.session.add(user)
         db.session.commit()
         login_user(user) # attempt to login user
@@ -110,10 +112,12 @@ def profile():
         current_user.email = form.email.data
         current_user.campus_area_id = form.campus_area.data
         current_user.activities = []
-        for activity_id in form.activities.data:
-            activity = Activity.query.get(activity_id)
-            if activity:
-                current_user.activities.append(activity)
+        # FIX: Add safety check for empty activities list
+        if form.activities.data:
+            for activity_id in form.activities.data:
+                activity = Activity.query.get(activity_id)
+                if activity:
+                    current_user.activities.append(activity)
         db.session.commit()
         flash("Profile updated!")
         return redirect(url_for("main.dashboard"))
