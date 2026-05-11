@@ -6,3 +6,5 @@ app = start_app()
 with app.app_context():
     db.create_all()
     populate_initial_data()
+
+application = app
