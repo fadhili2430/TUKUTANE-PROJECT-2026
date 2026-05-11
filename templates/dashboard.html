@@ -2,21 +2,57 @@
 <html lang="en">
 <head>
     <title>Tukutane Dashboard</title>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
     <link rel="stylesheet" href="{{url_for('static', filename='css/dashboard.css')}}">
+    <style>
+        #geo-status {
+            font-size: 0.85rem;
+            color: var(--text-muted);
+            margin-top: 0.4rem;
+            min-height: 1.2rem;
+        }
+        #geo-status.success { color: #4ade80; }
+        #geo-status.error   { color: #f87171; }
+        .btn-geo {
+            background: transparent;
+            border: 1px solid var(--border);
+            color: var(--text-muted);
+            font-size: 0.85rem;
+            padding: 0.35rem 0.75rem;
+            border-radius: 0.5rem;
+            transition: all 0.2s;
+            white-space: nowrap;
+        }
+        .btn-geo:hover {
+            border-color: var(--primary);
+            color: var(--primary);
+        }
+        .btn-geo:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+        }
+    </style>
 </head>
-<body class="bg-dark">
-<nav class="navbar navbar-expand-lg navbar-dark bg-primary">
+<body>
+<nav class="navbar navbar-expand-lg navbar-dark">
 <div class="container">
-<a class="navbar-brand" href="{{ url_for('main.home') }}">Tukutane</a>
+<a class="navbar-brand" href="{{ url_for('main.home') }}"><strong>Tukutane</strong></a>
+<button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav">
+<span class="navbar-toggler-icon"></span>
+</button>
+<div class="collapse navbar-collapse" id="navbarNav">
 <div class="navbar-nav ms-auto">
-<span class="navbar-text me-3">Welcome, {{ current_user.name }}</span>
+<span class="navbar-text me-3 text-muted">Welcome, {{ current_user.name }}</span>
+<a class="nav-link" href="{{ url_for('main.rsvps') }}">My RSVPs</a>
 <a class="nav-link" href="{{ url_for('main.create_event') }}">Create Event</a>
 <a class="nav-link" href="{{ url_for('main.profile') }}">Profile</a>
 {% if current_user.events_organised %}
-<a class="nav-link" href="{{ url_for('main.organizer_dashboard') }}">Organizer Dashboard</a>
+<a class="nav-link" href="{{ url_for('main.organizer') }}">Organizer</a>
 {% endif %}
 <a class="nav-link" href="{{ url_for('main.logout') }}">Logout</a>
+</div>
 </div>
 </div>
 </nav>
@@ -24,69 +60,168 @@
 <div class="container mt-4">
 {% with messages = get_flashed_messages() %}
 {% if messages %}
-<div class="alert alert-info">{{ messages[0] }}</div>
+<div class="alert alert-info alert-dismissible fade show" role="alert">
+{{ messages[0] }}
+<button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+</div>
 {% endif %}
 {% endwith %}
 
-<h2 class="mb-4">Discover Events</h2>
+<h2 class="mb-1">Discover Events</h2>
+<p class="text-muted mb-4">Find events happening across campus.</p>
 
-<form method="GET" action="{{ url_for('main.dashboard') }}" class="row g-3 mb-4">
+<form method="GET" action="{{ url_for('main.dashboard') }}" class="mb-4" id="filter-form">
+<div class="row g-3 align-items-end">
 <div class="col-md-4">
-<label for="activity" class="form-label">Activity:</label>
+<label for="activity" class="form-label">Activity</label>
 <select name="activity" id="activity" class="form-select">
-<option value="">All</option>
+<option value="">All Activities</option>
 {% for activity in activities %}
 <option value="{{ activity.id }}" {% if request.args.get('activity') == activity.id|string %}selected{% endif %}>{{ activity.name }}</option>
 {% endfor %}
 </select>
 </div>
 <div class="col-md-4">
-<label for="campus_area" class="form-label">Campus Area:</label>
+<label for="campus_area" class="form-label">Campus Area</label>
 <select name="campus_area" id="campus_area" class="form-select">
-<option value="">All</option>
+<option value="">All Areas</option>
 {% for area in campus_areas %}
 <option value="{{ area.id }}" {% if request.args.get('campus_area') == area.id|string %}selected{% endif %}>{{ area.name }}</option>
 {% endfor %}
 </select>
+<div id="geo-status"></div>
 </div>
-<div class="col-md-4 d-flex align-items-end">
+<div class="col-md-4 d-flex gap-2">
 <button type="submit" class="btn btn-primary">Filter</button>
+<button type="button" class="btn-geo" id="geo-btn" title="Auto-detect your nearest campus area">
+📍 Near Me
+</button>
+</div>
 </div>
 </form>
 
+{% if events %}
 <div class="row">
 {% for event in events %}
 <div class="col-md-4 mb-4">
 <div class="card h-100">
 <div class="card-body">
 <h5 class="card-title">{{ event.title }}</h5>
+<p class="card-text text-muted mb-1"><span class="badge me-1">{{ event.activity.name }}</span> &bull; {{ event.campus_area.name }}</p>
 <p class="card-text">
-<strong>Activity:</strong> {{ event.activity.name }}<br>
-<strong>Campus Area:</strong> {{ event.campus_area.name }}<br>
 <strong>Date:</strong> {{ event.date }}<br>
 <strong>Time:</strong> {{ event.time }}<br>
-<strong>Max Attendees:</strong> {{ event.max_attendees }}<br>
+<strong>Capacity:</strong> {{ event.max_attendees }}<br>
 {% set rsvp = event.rsvps | selectattr('user_id', 'equalto', current_user.id) | first %}
 {% if rsvp %}
-<strong>RSVP Status:</strong> {{ rsvp.status }}
+<strong>Your RSVP:</strong> <span class="text-success">{{ rsvp.status }}</span>
 {% endif %}
 </p>
 </div>
 <div class="card-footer">
 {% if event.organiser_id == current_user.id %}
-<button class="btn btn-secondary" disabled>You are the Organizer</button>
+<button class="btn btn-sm btn-outline-secondary" disabled>You organised this</button>
 {% elif rsvp and rsvp.status == 'confirmed' %}
-<a href="{{ url_for('main.cancel_rsvp', event_id=event.id) }}" class="btn btn-warning" onclick="return confirm('Cancel your RSVP?')">Cancel RSVP</a>
+<a href="{{ url_for('main.cancel_rsvp', event_id=event.id) }}" class="btn btn-sm btn-warning" onclick="return confirm('Cancel your RSVP?')">Cancel RSVP</a>
 {% else %}
-<a href="{{ url_for('main.rsvp', event_id=event.id) }}" class="btn btn-success">RSVP</a>
+<a href="{{ url_for('main.rsvp', event_id=event.id) }}" class="btn btn-sm btn-primary">RSVP</a>
 {% endif %}
 </div>
 </div>
 </div>
 {% endfor %}
 </div>
+{% else %}
+<div class="alert alert-info">No events found. Try a different filter or <a href="{{ url_for('main.create_event') }}" class="alert-link">create one</a>.</div>
+{% endif %}
 </div>
 
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+<script>
+(function () {
+    const campusAreas = [
+        {% for area in campus_areas %}
+        { id: "{{ area.id }}", name: "{{ area.name }}" },
+        {% endfor %}
+    ];
+
+    const areaCoords = {
+        "Main Block":      { lat: -1.28320, lng: 36.81720 },
+        "Sports Centre":   { lat: -1.28450, lng: 36.81850 },
+        "Library Grounds": { lat: -1.28200, lng: 36.81650 },
+        "Cafeteria":       { lat: -1.28380, lng: 36.81780 },
+        "Lecture Room 1":  { lat: -1.28280, lng: 36.81700 },
+        "Computer Lab":    { lat: -1.28350, lng: 36.81750 },
+        "Student Union":   { lat: -1.28420, lng: 36.81800 },
+        "Dormitory Area":  { lat: -1.28500, lng: 36.81900 },
+    };
+
+    function haversineKm(lat1, lng1, lat2, lng2) {
+        const R = 6371;
+        const dLat = (lat2 - lat1) * Math.PI / 180;
+        const dLng = (lng2 - lng1) * Math.PI / 180;
+        const a = Math.sin(dLat / 2) ** 2 +
+                  Math.cos(lat1 * Math.PI / 180) *
+                  Math.cos(lat2 * Math.PI / 180) *
+                  Math.sin(dLng / 2) ** 2;
+        return R * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+    }
+
+    const btn = document.getElementById('geo-btn');
+    const status = document.getElementById('geo-status');
+    const select = document.getElementById('campus_area');
+
+    if (!navigator.geolocation) {
+        btn.disabled = true;
+        btn.title = 'Geolocation not supported by your browser';
+    }
+
+    btn.addEventListener('click', function () {
+        btn.disabled = true;
+        status.className = '';
+        status.textContent = 'Detecting your location…';
+
+        navigator.geolocation.getCurrentPosition(
+            function (pos) {
+                const userLat = pos.coords.latitude;
+                const userLng = pos.coords.longitude;
+
+                let nearest = null;
+                let minDist = Infinity;
+
+                campusAreas.forEach(function (area) {
+                    const coords = areaCoords[area.name];
+                    if (!coords) return;
+                    const dist = haversineKm(userLat, userLng, coords.lat, coords.lng);
+                    if (dist < minDist) {
+                        minDist = dist;
+                        nearest = area;
+                    }
+                });
+
+                btn.disabled = false;
+
+                if (nearest) {
+                    select.value = nearest.id;
+                    status.className = 'success';
+                    status.textContent = '📍 Nearest: ' + nearest.name;
+                    document.getElementById('filter-form').submit();
+                } else {
+                    status.className = 'error';
+                    status.textContent = 'Could not match your location to a campus area.';
+                }
+            },
+            function (err) {
+                btn.disabled = false;
+                status.className = 'error';
+                status.textContent = err.code === 1
+                    ? 'Location permission denied.'
+                    : 'Could not get your location.';
+            },
+            { timeout: 8000 }
+        );
+    });
+})();
+</script>
 </body>
 </html>
