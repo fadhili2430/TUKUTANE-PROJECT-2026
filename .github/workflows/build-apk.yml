@@ -19,54 +19,23 @@ jobs:
           java-version: '17'
           distribution: 'temurin'
 
-      - name: Download Gradle Wrapper JAR
-        run: |
-          mkdir -p android/gradle/wrapper
-          curl -fsSL -o android/gradle/wrapper/gradle-wrapper.jar \
-            https://github.com/gradle/gradle/raw/v8.2.0/gradle/wrapper/gradle-wrapper.jar
+      - name: Setup Gradle
+        uses: gradle/actions/setup-gradle@v3
+        with:
+          gradle-version: '8.2'
 
       - name: Make gradlew executable
         run: chmod +x android/gradlew
 
-      - name: Cache Gradle packages
-        uses: actions/cache@v4
-        with:
-          path: |
-            ~/.gradle/caches
-            ~/.gradle/wrapper
-          key: ${{ runner.os }}-gradle-${{ hashFiles('android/**/*.gradle*', 'android/**/gradle-wrapper.properties') }}
-          restore-keys: |
-            ${{ runner.os }}-gradle-
-
       - name: Build debug APK
         working-directory: android
+        run: gradle assembleDebug --no-daemon --stacktrace
         env:
           ANDROID_HOME: /usr/local/lib/android/sdk
-        run: ./gradlew assembleDebug --no-daemon --stacktrace
 
       - name: Upload debug APK
         uses: actions/upload-artifact@v4
         with:
           name: tukutane-debug
           path: android/app/build/outputs/apk/debug/app-debug.apk
-          retention-days: 30
-
-      - name: Build release APK (if keystore secrets available)
-        if: ${{ secrets.KEYSTORE_BASE64 != '' }}
-        working-directory: android
-        env:
-          ANDROID_HOME: /usr/local/lib/android/sdk
-          KEYSTORE_PASSWORD: ${{ secrets.KEYSTORE_PASSWORD }}
-          KEY_ALIAS: ${{ secrets.KEY_ALIAS }}
-          KEY_PASSWORD: ${{ secrets.KEY_PASSWORD }}
-        run: |
-          echo "${{ secrets.KEYSTORE_BASE64 }}" | base64 --decode > app/keystore.jks
-          KEYSTORE_FILE=keystore.jks ./gradlew assembleRelease --no-daemon
-
-      - name: Upload release APK
-        if: ${{ secrets.KEYSTORE_BASE64 != '' }}
-        uses: actions/upload-artifact@v4
-        with:
-          name: tukutane-release
-          path: android/app/build/outputs/apk/release/app-release.apk
           retention-days: 30
