@@ -1,98 +1,116 @@
 <!DOCTYPE html>
-  <html lang="en">
-  <head>
-      <title>My RSVPs - Tukutane</title>
-      <meta charset='utf-8'>
-      <meta name="viewport" content="width=device-width, initial-scale=1">
-      <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
-      <link rel="stylesheet" href="{{url_for('static', filename='css/dashboard.css')}}">
-  </head>
-  <body>
-  <nav class="navbar navbar-expand-lg navbar-dark">
-  <div class="container">
-  <a class="navbar-brand" href="{{ url_for('main.home') }}"><strong>Tukutane</strong></a>
-  <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav">
-  <span class="navbar-toggler-icon"></span>
-  </button>
-  <div class="collapse navbar-collapse" id="navbarNav">
-  <div class="navbar-nav ms-auto">
-  <a class="nav-link" href="{{ url_for('main.dashboard') }}">Dashboard</a>
-  <a class="nav-link" href="{{ url_for('main.logout') }}">Logout</a>
-  </div>
-  </div>
-  </div>
-  </nav>
+<html lang="en">
+<head>
+    <title>My RSVPs - Tukutane</title>
+    <meta charset='utf-8'>
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="{{url_for('static', filename='css/dashboard.css')}}">
+</head>
+<body>
+<nav class="navbar navbar-expand-lg navbar-dark">
+<div class="container">
+<a class="navbar-brand" href="{{ url_for('main.home') }}"><strong>Tukutane</strong></a>
+<button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav">
+<span class="navbar-toggler-icon"></span>
+</button>
+<div class="collapse navbar-collapse" id="navbarNav">
+<div class="navbar-nav ms-auto">
+<a class="nav-link" href="{{ url_for('main.dashboard') }}">Dashboard</a>
+<a class="nav-link" href="{{ url_for('main.logout') }}">Logout</a>
+</div>
+</div>
+</div>
+</nav>
 
-  <div class="container py-5">
-  <div class="row">
-  <div class="col-md-10 mx-auto">
-  <div class="mb-4">
-  <h1 class="mb-2">My RSVPs</h1>
-  <p class="text-muted">All the events you've signed up for.</p>
-  </div>
+<div class="container py-5">
+<div class="row">
+<div class="col-md-10 mx-auto">
+<div class="mb-4">
+<h1 class="mb-2">My RSVPs</h1>
+<p class="text-muted">All the events you've signed up for.</p>
+</div>
 
-  {% if rsvps %}
-  <div class="row">
-  {% for rsvp in rsvps %}
-  <div class="col-md-6 mb-4">
-  <div class="card">
-  <div class="card-body">
-  <h5 class="card-title">{{ rsvp.event.title }}</h5>
-  <p class="card-text">
-  <strong>Activity:</strong> {{ rsvp.event.activity.name }}<br>
-  <strong>Campus Area:</strong> {{ rsvp.event.campus_area.name }}<br>
-  <strong>Date:</strong> {{ rsvp.event.date }}<br>
-  <strong>Time:</strong> {{ rsvp.event.time }}<br>
-  </p>
-  <a href="{{ url_for('main.dashboard') }}" class="btn btn-primary btn-sm">View on Dashboard</a>
-  {% if rsvp.event.organiser_id == current_user.id %}
-  <a href="{{ url_for('main.edit_event', event_id=rsvp.event.id) }}" class="btn btn-outline-secondary btn-sm">Edit Event</a>
-  {% endif %}
-  </div>
-  </div>
-  </div>
-  {% endfor %}
-  </div>
-  {% else %}
-  <div class="alert alert-info">
-  <p class="mb-0">You haven't RSVPed to any events yet. Explore the dashboard to find events that interest you!</p>
-  </div>
-  {% endif %}
-  </div>
-  </div>
-  </div>
+{% if rsvps %}
+<div class="row">
+{% for rsvp in rsvps %}
+<div class="col-md-6 mb-4">
+<div class="card">
+<div class="card-body">
+<h5 class="card-title">{{ rsvp.event.title }}</h5>
+<p class="card-text">
+<strong>Activity:</strong> {{ rsvp.event.activity.name }}<br>
+<strong>Campus Area:</strong> {{ rsvp.event.campus_area.name }}<br>
+<strong>Date:</strong> {{ rsvp.event.date }}<br>
+<strong>Time:</strong> {{ rsvp.event.time }}<br>
+</p>
+<a href="{{ url_for('main.dashboard') }}" class="btn btn-primary btn-sm">View on Dashboard</a>
+{% if rsvp.event.organiser_id == current_user.id %}
+<a href="{{ url_for('main.edit_event', event_id=rsvp.event.id) }}" class="btn btn-outline-secondary btn-sm">Edit Event</a>
+{% endif %}
+</div>
+</div>
+</div>
+{% endfor %}
+</div>
+{% else %}
+<div class="alert alert-info">
+<p class="mb-0">You haven't RSVPed to any events yet. Explore the dashboard to find events that interest you!</p>
+</div>
+{% endif %}
+</div>
+</div>
+</div>
 
-  <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
 
-  <script>
-  (function () {
-      if (typeof window.TukutaneAndroid === 'undefined' || !window.TukutaneAndroid.isNativeApp()) {
-          return;
-      }
+<script>
+(function () {
+    if (typeof window.TukutaneAndroid === 'undefined' || !window.TukutaneAndroid.isNativeApp()) {
+        return;
+    }
 
-      var events = [
-          {% for rsvp in rsvps %}
-          {
-              id: {{ rsvp.event.id }},
-              title: {{ rsvp.event.title | tojson }},
-              date: "{{ rsvp.event.date }}",
-              time: "{{ rsvp.event.time }}"
-          }{% if not loop.last %},{% endif %}
-          {% endfor %}
-      ];
+    var events = [
+        {% for rsvp in rsvps %}
+        {
+            id: {{ rsvp.event.id }},
+            title: {{ rsvp.event.title | tojson }},
+            date: "{{ rsvp.event.date }}",
+            time: "{{ rsvp.event.time }}"
+        }{% if not loop.last %},{% endif %}
+        {% endfor %}
+    ];
 
-      events.forEach(function (event) {
-          try {
-              window.TukutaneAndroid.scheduleEventReminder(
-                  event.id,
-                  event.title,
-                  event.date,
-                  event.time
-              );
-          } catch (e) {}
-      });
-  })();
-  </script>
+    // Schedule a reminder 1 hour before each upcoming event.
+    var today = new Date();
+    today.setHours(0, 0, 0, 0);
+    var upcomingCount = 0;
 
-  </body>
-  </html>
+    events.forEach(function (ev) {
+        try {
+            var parts = ev.date.split('-');
+            var eventDate = new Date(
+                parseInt(parts[0], 10),
+                parseInt(parts[1], 10) - 1,
+                parseInt(parts[2], 10)
+            );
+            if (eventDate >= today) {
+                upcomingCount++;
+                window.TukutaneAndroid.scheduleEventReminder(
+                    ev.id, ev.title, ev.date, ev.time
+                );
+            }
+        } catch (e) {
+        }
+    });
+
+    // Update the launcher icon badge with the count of upcoming RSVP'd events.
+    try {
+        window.TukutaneAndroid.setBadgeCount(upcomingCount);
+    } catch (e) {
+    }
+})();
+</script>
+
+</body>
+</html>
