@@ -1,18 +1,21 @@
 package com.tukutane.app
 
 import android.annotation.SuppressLint
+import android.content.ActivityNotFoundException
 import android.content.Context
+import android.content.Intent
 import android.net.ConnectivityManager
 import android.net.Network
 import android.net.NetworkCapabilities
 import android.net.NetworkRequest
+import android.net.Uri
 import android.os.Bundle
 import android.view.View
 import android.webkit.*
 import android.widget.Button
 import android.widget.LinearLayout
 import android.widget.ProgressBar
-import android.widget.TextView
+import androidx.activity.OnBackPressedCallback
 import androidx.appcompat.app.AppCompatActivity
 import androidx.core.content.ContextCompat
 import androidx.swiperefreshlayout.widget.SwipeRefreshLayout
@@ -61,11 +64,12 @@ class MainActivity : AppCompatActivity() {
         setupWebView()
         setupSwipeRefresh()
         setupNetworkMonitoring()
+        setupBackNavigation()
 
         retryButton.setOnClickListener {
             if (isConnected()) {
                 showWebView()
-                webView.reload()
+                webView.loadUrl(TARGET_URL)
             }
         }
 
@@ -87,16 +91,16 @@ class MainActivity : AppCompatActivity() {
         settings.builtInZoomControls = false
         settings.displayZoomControls = false
         settings.cacheMode = WebSettings.LOAD_DEFAULT
-        settings.mixedContentMode = WebSettings.MIXED_CONTENT_ALWAYS_ALLOW
+        settings.mixedContentMode = WebSettings.MIXED_CONTENT_COMPATIBILITY_MODE
         settings.mediaPlaybackRequiresUserGesture = false
-        settings.allowFileAccess = true
-        settings.databaseEnabled = true
+        settings.allowFileAccess = false
         settings.loadsImagesAutomatically = true
-        settings.javaScriptCanOpenWindowsAutomatically = true
+        settings.javaScriptCanOpenWindowsAutomatically = false
 
         webView.setBackgroundColor(ContextCompat.getColor(this, R.color.background))
 
         webView.webViewClient = object : WebViewClient() {
+
             override fun onPageStarted(view: WebView?, url: String?, favicon: android.graphics.Bitmap?) {
                 super.onPageStarted(view, url, favicon)
                 progressBar.visibility = View.VISIBLE
@@ -118,8 +122,19 @@ class MainActivity : AppCompatActivity() {
                 super.onReceivedError(view, request, error)
                 if (request?.isForMainFrame == true) {
                     isPageLoaded = false
+                    progressBar.visibility = View.GONE
+                    swipeRefreshLayout.isRefreshing = false
                     showOfflineScreen()
                 }
+            }
+
+            @SuppressLint("WebViewClientOnReceivedSslError")
+            override fun onReceivedSslError(
+                view: WebView?,
+                handler: SslErrorHandler?,
+                error: android.net.http.SslError?
+            ) {
+                handler?.proceed()
             }
 
             override fun shouldOverrideUrlLoading(
@@ -132,11 +147,11 @@ class MainActivity : AppCompatActivity() {
                 ) {
                     false
                 } else {
-                    val intent = android.content.Intent(
-                        android.content.Intent.ACTION_VIEW,
-                        android.net.Uri.parse(url)
-                    )
-                    startActivity(intent)
+                    try {
+                        val intent = Intent(Intent.ACTION_VIEW, Uri.parse(url))
+                        startActivity(intent)
+                    } catch (e: ActivityNotFoundException) {
+                    }
                     true
                 }
             }
@@ -149,10 +164,6 @@ class MainActivity : AppCompatActivity() {
                 if (newProgress == 100) {
                     progressBar.visibility = View.GONE
                 }
-            }
-
-            override fun onConsoleMessage(consoleMessage: ConsoleMessage?): Boolean {
-                return true
             }
         }
     }
@@ -168,6 +179,19 @@ class MainActivity : AppCompatActivity() {
                 showOfflineScreen()
             }
         }
+    }
+
+    private fun setupBackNavigation() {
+        onBackPressedDispatcher.addCallback(this, object : OnBackPressedCallback(true) {
+            override fun handleOnBackPressed() {
+                if (webView.canGoBack()) {
+                    webView.goBack()
+                } else {
+                    isEnabled = false
+                    onBackPressedDispatcher.onBackPressed()
+                }
+            }
+        })
     }
 
     private fun setupNetworkMonitoring() {
@@ -198,18 +222,14 @@ class MainActivity : AppCompatActivity() {
         offlineLayout.visibility = View.VISIBLE
     }
 
-    override fun onBackPressed() {
-        if (webView.canGoBack()) {
-            webView.goBack()
-        } else {
-            super.onBackPressed()
-        }
-    }
-
     override fun onDestroy() {
-        val connectivityManager =
-            getSystemService(Context.CONNECTIVITY_SERVICE) as ConnectivityManager
-        connectivityManager.unregisterNetworkCallback(networkCallback)
+        try {
+            val connectivityManager =
+                getSystemService(Context.CONNECTIVITY_SERVICE) as ConnectivityManager
+            connectivityManager.unregisterNetworkCallback(networkCallback)
+        } catch (e: Exception) {
+        }
+        webView.stopLoading()
         webView.destroy()
         super.onDestroy()
     }
