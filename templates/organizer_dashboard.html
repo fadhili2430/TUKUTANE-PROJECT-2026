@@ -2,32 +2,63 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Organizer Dashboard</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">
+    <title>My Events - Tukutane</title>
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
     <link rel="stylesheet" href="{{url_for('static', filename='css/organizer.css')}}">
+    <style>
+        .btn { min-height: 44px; font-size: 0.95rem; }
+        .btn-sm { min-height: 40px; }
+        @media (max-width: 576px) {
+            .page-wrap { padding-top: 1.25rem; padding-bottom: 5rem; }
+            .event-actions { display: flex; flex-direction: column; gap: 0.5rem; }
+            .event-actions .btn { width: 100%; }
+            .page-header { flex-direction: column; align-items: flex-start !important; gap: 0.75rem; }
+            .page-header .btn { width: 100%; }
+        }
+        @media (min-width: 577px) {
+            .page-wrap { padding-top: 2rem; padding-bottom: 3rem; }
+        }
+    </style>
 </head>
 <body>
     <nav class="navbar navbar-dark">
         <div class="container">
-            <span class="navbar-brand">{{ current_user.name }}'s Events</span>
-            <a href="{{ url_for('main.dashboard') }}" class="nav-link">Back to Dashboard</a>
+            <a class="navbar-brand fw-bold" href="{{ url_for('main.home') }}">Tukutane</a>
+            <a href="{{ url_for('main.dashboard') }}" class="btn btn-sm btn-outline-light">← Dashboard</a>
         </div>
     </nav>
 
-    <div class="container mt-5">
+    <div class="container page-wrap">
+        <div class="d-flex justify-content-between align-items-center mb-4 page-header">
+            <h2 class="mb-0 h3">My Organised Events</h2>
+            <a href="{{ url_for('main.create_event') }}" class="btn btn-primary">+ New Event</a>
+        </div>
+
+        {% with messages = get_flashed_messages() %}
+        {% if messages %}
+        <div class="alert alert-info alert-dismissible fade show" role="alert">
+            {{ messages[0] }}
+            <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+        </div>
+        {% endif %}
+        {% endwith %}
+
         {% if events %}
-            <div class="row g-4">
+            <div class="row g-3">
                 {% for event in events %}
-                    <div class="col-md-6 col-lg-4">
-                        <div class="card">
+                    <div class="col-12 col-sm-6 col-lg-4">
+                        <div class="card h-100">
                             <div class="card-body">
                                 <h5 class="card-title">{{ event.title }}</h5>
-                                <p class="card-text text-muted">{{ event.activity.name }}</p>
-                                <p class="card-text text-muted">{{ event.campus_area.name }}</p>
-                                <div class="d-flex gap-2">
-                                    <a href="{{ url_for('main.edit_event', event_id=event.id) }}" class="btn btn-sm btn-primary">Edit</a>
-                                    <a href="{{ url_for('main.view_rsvps', event_id=event.id) }}" class="btn btn-sm btn-outline-primary">RSVPs</a>
+                                <p class="card-text text-muted mb-1">{{ event.activity.name }}</p>
+                                <p class="card-text text-muted mb-1">{{ event.campus_area.name }}</p>
+                                <p class="card-text text-muted small mb-0">{{ event.date }} &bull; {{ event.time }}</p>
+                            </div>
+                            <div class="card-footer">
+                                <div class="event-actions d-flex gap-2">
+                                    <a href="{{ url_for('main.edit_event', event_id=event.id) }}" class="btn btn-sm btn-primary flex-fill">Edit</a>
+                                    <a href="{{ url_for('main.view_rsvps', event_id=event.id) }}" class="btn btn-sm btn-outline-primary flex-fill">RSVPs</a>
                                 </div>
                             </div>
                         </div>
@@ -36,7 +67,7 @@
             </div>
         {% else %}
             <div class="alert alert-info">
-                <p>You have not organized any events yet.</p>
+                You haven't organised any events yet. <a href="{{ url_for('main.create_event') }}" class="alert-link">Create your first event</a>.
             </div>
         {% endif %}
     </div>
