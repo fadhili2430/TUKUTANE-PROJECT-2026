@@ -3,9 +3,25 @@
 <head>
     <title>Edit Event - Tukutane</title>
     <meta charset='utf-8'>
-    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1">
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
     <link rel="stylesheet" href="{{url_for('static', filename='css/dashboard.css')}}">
+    <style>
+        .form-control, .form-select { min-height: 48px; font-size: 1rem; }
+        textarea.form-control { min-height: 100px; resize: vertical; }
+        .btn { min-height: 48px; font-size: 1rem; }
+        @media (max-width: 576px) {
+            .page-wrap { padding-top: 1rem; padding-bottom: 5rem; }
+            .form-control, .form-select { font-size: 16px; }
+            .card-body { padding: 1.25rem 1rem; }
+            .card-header { padding: 1rem; }
+            .card-footer { padding: 0.75rem 1rem; }
+            .field-row .col-6 { padding-right: 0.4rem; padding-left: 0.4rem; }
+        }
+        @media (min-width: 577px) {
+            .page-wrap { padding-top: 2.5rem; padding-bottom: 3rem; }
+        }
+    </style>
 </head>
 <body>
 <nav class="navbar navbar-expand-lg navbar-dark">
@@ -16,111 +32,93 @@
 </button>
 <div class="collapse navbar-collapse" id="navbarNav">
 <div class="navbar-nav ms-auto">
-<a class="nav-link" href="{{ url_for('main.organizer') }}">Organizer Dashboard</a>
+<a class="nav-link" href="{{ url_for('main.dashboard') }}">Dashboard</a>
 <a class="nav-link" href="{{ url_for('main.logout') }}">Logout</a>
 </div>
 </div>
 </div>
 </nav>
 
-<div class="container mt-5">
+<div class="container page-wrap">
 <div class="row justify-content-center">
-<div class="col-md-8">
+<div class="col-12 col-md-8 col-lg-7">
 <div class="card">
-<div class="card-header d-flex justify-content-between align-items-center">
-<h1 class="h3 mb-0">Edit Event</h1>
-<a href="{{ url_for('main.organizer') }}" class="btn btn-sm btn-outline-secondary">Back</a>
+<div class="card-header">
+<h1 class="h4 mb-0">Edit Event</h1>
 </div>
 <div class="card-body">
-
-{% with messages = get_flashed_messages() %}
-{% if messages %}
-<div class="alert alert-info alert-dismissible fade show" role="alert">
-{{ messages[0] }}
-<button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
-</div>
-{% endif %}
-{% endwith %}
-
-<form method="POST">
-{{ form.hidden_tag() }}
+<form action="{{ url_for('main.edit_event', event_id=event.id) }}" method="POST" novalidate>
+{{ form.csrf_token() }}
 <div class="mb-3">
 {{ form.title.label(class="form-label") }}
-{{ form.title(class="form-control") }}
+{{ form.title(class="form-control", placeholder="Event title", autocomplete="off") }}
 {% if form.title.errors %}
-<div class="text-danger">
-{% for error in form.title.errors %}{{ error }}<br>{% endfor %}
-</div>
+<div class="text-danger small mt-1">{% for e in form.title.errors %}{{ e }}{% endfor %}</div>
 {% endif %}
 </div>
 <div class="mb-3">
 {{ form.description.label(class="form-label") }}
-{{ form.description(class="form-control") }}
+{{ form.description(class="form-control", placeholder="Describe your event...", rows="4") }}
 {% if form.description.errors %}
-<div class="text-danger">
-{% for error in form.description.errors %}{{ error }}<br>{% endfor %}
-</div>
+<div class="text-danger small mt-1">{% for e in form.description.errors %}{{ e }}{% endfor %}</div>
 {% endif %}
 </div>
 <div class="mb-3">
 {{ form.activity.label(class="form-label") }}
 {{ form.activity(class="form-select") }}
 {% if form.activity.errors %}
-<div class="text-danger">
-{% for error in form.activity.errors %}{{ error }}<br>{% endfor %}
-</div>
+<div class="text-danger small mt-1">{% for e in form.activity.errors %}{{ e }}{% endfor %}</div>
 {% endif %}
 </div>
 <div class="mb-3">
 {{ form.campus_area.label(class="form-label") }}
 {{ form.campus_area(class="form-select") }}
 {% if form.campus_area.errors %}
-<div class="text-danger">
-{% for error in form.campus_area.errors %}{{ error }}<br>{% endfor %}
-</div>
+<div class="text-danger small mt-1">{% for e in form.campus_area.errors %}{{ e }}{% endfor %}</div>
 {% endif %}
 </div>
-<div class="row">
-<div class="col-md-6 mb-3">
+<div class="row field-row gx-2 mb-3">
+<div class="col-6">
 {{ form.date.label(class="form-label") }}
 {{ form.date(class="form-control") }}
 {% if form.date.errors %}
-<div class="text-danger">
-{% for error in form.date.errors %}{{ error }}<br>{% endfor %}
-</div>
+<div class="text-danger small mt-1">{% for e in form.date.errors %}{{ e }}{% endfor %}</div>
 {% endif %}
 </div>
-<div class="col-md-6 mb-3">
+<div class="col-6">
 {{ form.time.label(class="form-label") }}
 {{ form.time(class="form-control") }}
 {% if form.time.errors %}
-<div class="text-danger">
-{% for error in form.time.errors %}{{ error }}<br>{% endfor %}
-</div>
+<div class="text-danger small mt-1">{% for e in form.time.errors %}{{ e }}{% endfor %}</div>
 {% endif %}
 </div>
 </div>
-<div class="mb-3">
+<div class="mb-4">
 {{ form.max_attendees.label(class="form-label") }}
-{{ form.max_attendees(class="form-control") }}
+{{ form.max_attendees(class="form-control", inputmode="numeric", pattern="[0-9]*") }}
 {% if form.max_attendees.errors %}
-<div class="text-danger">
-{% for error in form.max_attendees.errors %}{{ error }}<br>{% endfor %}
-</div>
+<div class="text-danger small mt-1">{% for e in form.max_attendees.errors %}{{ e }}{% endfor %}</div>
 {% endif %}
 </div>
-<div class="d-grid">
-{{ form.submit(class="btn btn-primary btn-lg") }}
+<div class="d-grid mb-2">
+{{ form.submit(class="btn btn-primary fw-semibold") }}
 </div>
 </form>
 </div>
 <div class="card-footer">
-<a href="{{ url_for('main.organizer') }}" class="btn btn-outline-secondary">Cancel</a>
+<div class="d-grid d-sm-block">
+<a href="{{ url_for('main.organizer') }}" class="btn btn-secondary w-100 w-sm-auto">← Back</a>
+</div>
 </div>
 </div>
 </div>
 </div>
 </div>
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+<script>
+document.querySelectorAll('input[type="date"], input[type="time"]').forEach(function(el) {
+    el.addEventListener('focus', function() { this.showPicker && this.showPicker(); });
+});
+</script>
 </body>
 </html>
