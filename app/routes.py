@@ -123,15 +123,24 @@ def create_event():
 def rsvp(event_id):
     try:
         event = Event.query.get_or_404(event_id)
-        if event.is_full():
-            flash("Event is full!")
-        elif RSVP.query.filter_by(user_id=current_user.id, event_id=event_id).first():
+        existing = RSVP.query.filter_by(user_id=current_user.id, event_id=event_id).first()
+        if existing and existing.status == 'confirmed':
             flash("Already RSVP'd!")
+        elif existing and existing.status == 'cancelled':
+            if event.is_full():
+                flash("Event is full!")
+            else:
+                existing.status = 'confirmed'
+                db.session.commit()
+                flash("See you there!")
         else:
-            new_rsvp = RSVP(user_id=current_user.id, event_id=event_id)
-            db.session.add(new_rsvp)
-            db.session.commit()
-            flash("See you there!")
+            if event.is_full():
+                flash("Event is full!")
+            else:
+                new_rsvp = RSVP(user_id=current_user.id, event_id=event_id)
+                db.session.add(new_rsvp)
+                db.session.commit()
+                flash("See you there!")
     except Exception as e:
         db.session.rollback()
         logger.error(f"RSVP error: {str(e)}")
@@ -236,7 +245,7 @@ def edit_event(event_id):
             form.date.data = event.date
             form.time.data = event.time
             form.max_attendees.data = event.max_attendees
-        return render_template("edit_event.html", form=form)
+        return render_template("edit_event.html", form=form, event=event)
     except Exception as e:
         logger.error(f"Edit event error: {str(e)}")
         flash("An error occurred editing the event. Please try again.")
