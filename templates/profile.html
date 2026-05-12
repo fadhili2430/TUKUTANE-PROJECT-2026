@@ -3,9 +3,25 @@
 <head>
     <title>Profile - Tukutane</title>
     <meta charset='utf-8'>
-    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
     <link rel="stylesheet" href="{{ url_for('static', filename='css/dashboard.css') }}">
+    <style>
+        .form-control, .form-select { min-height: 48px; font-size: 1rem; }
+        .btn { min-height: 48px; font-size: 1rem; }
+        select[multiple] { min-height: 130px; }
+        @media (max-width: 576px) {
+            .form-control, .form-select { font-size: 16px; }
+            .page-wrap { padding-top: 1.25rem; padding-bottom: 5rem; }
+            .card-body { padding: 1rem; }
+            .info-grid .col-6 { flex: 0 0 100%; max-width: 100%; }
+            .action-row { flex-direction: column; gap: 0.5rem; }
+            .action-row .btn { width: 100%; }
+        }
+        @media (min-width: 577px) {
+            .page-wrap { padding-top: 2rem; padding-bottom: 3rem; }
+        }
+    </style>
 </head>
 <body>
 <nav class="navbar navbar-expand-lg navbar-dark">
@@ -23,41 +39,42 @@
 </div>
 </nav>
 
-<div class="container py-5">
-<div class="row mb-4">
-<div class="col-md-8 mx-auto">
+<div class="container page-wrap">
+<div class="row">
+<div class="col-12 col-md-9 col-lg-7 mx-auto">
+
 {% with messages = get_flashed_messages() %}
 {% if messages %}
 <div class="alert alert-success alert-dismissible fade show" role="alert">
 {{ messages[0] }}
-<button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+<button type="button" class="btn-close" data-bs-dismiss="alert"></button>
 </div>
 {% endif %}
 {% endwith %}
 
-<h1 class="mb-4">My Profile</h1>
+<h1 class="h3 mb-3">My Profile</h1>
 
-<div class="card mb-4">
+<div class="card mb-3">
 <div class="card-header">
-<h5 class="mb-0">Current Profile Information</h5>
+<h5 class="mb-0">Current Information</h5>
 </div>
 <div class="card-body">
-<div class="row">
-<div class="col-md-6 mb-3">
-<p class="text-muted mb-1"><strong class="text-white">Name</strong></p>
-<p class="text-muted">{{ current_user.name }}</p>
+<div class="row info-grid g-2">
+<div class="col-6">
+<p class="text-muted mb-1 small"><strong class="text-white">Name</strong></p>
+<p class="text-muted mb-0">{{ current_user.name }}</p>
 </div>
-<div class="col-md-6 mb-3">
-<p class="text-muted mb-1"><strong class="text-white">Email</strong></p>
-<p class="text-muted">{{ current_user.email }}</p>
+<div class="col-6">
+<p class="text-muted mb-1 small"><strong class="text-white">Email</strong></p>
+<p class="text-muted mb-0" style="word-break:break-all;">{{ current_user.email }}</p>
 </div>
-<div class="col-md-6 mb-3">
-<p class="text-muted mb-1"><strong class="text-white">Campus Area</strong></p>
-<p class="text-muted">{{ current_user.campus_area.name }}</p>
+<div class="col-6 mt-2">
+<p class="text-muted mb-1 small"><strong class="text-white">Campus</strong></p>
+<p class="text-muted mb-0">{{ current_user.campus_area.name }}</p>
 </div>
-<div class="col-md-6 mb-3">
-<p class="text-muted mb-1"><strong class="text-white">Interests</strong></p>
-<p class="text-muted">{{ current_user.activities | join(', ', attribute='name') }}</p>
+<div class="col-6 mt-2">
+<p class="text-muted mb-1 small"><strong class="text-white">Interests</strong></p>
+<p class="text-muted mb-0">{{ current_user.activities | join(', ', attribute='name') }}</p>
 </div>
 </div>
 </div>
@@ -65,54 +82,48 @@
 
 <div class="card">
 <div class="card-header">
-<h5 class="mb-0">Update Profile Information</h5>
+<h5 class="mb-0">Update Profile</h5>
 </div>
 <div class="card-body">
-<form method="POST" action="{{ url_for('main.profile') }}">
+<form method="POST" action="{{ url_for('main.profile') }}" novalidate>
 {{ form.csrf_token() }}
 <div class="mb-3">
 {{ form.name.label(class="form-label") }}
-{{ form.name(class="form-control") }}
+{{ form.name(class="form-control", autocomplete="name") }}
 {% if form.name.errors %}
-<div class="text-danger">
-{% for error in form.name.errors %}<small>{{ error }}</small><br>{% endfor %}
-</div>
+<div class="text-danger small mt-1">{% for e in form.name.errors %}{{ e }}{% endfor %}</div>
 {% endif %}
 </div>
 <div class="mb-3">
 {{ form.email.label(class="form-label") }}
-{{ form.email(class="form-control") }}
+{{ form.email(class="form-control", autocomplete="email", inputmode="email") }}
 {% if form.email.errors %}
-<div class="text-danger">
-{% for error in form.email.errors %}<small>{{ error }}</small><br>{% endfor %}
-</div>
+<div class="text-danger small mt-1">{% for e in form.email.errors %}{{ e }}{% endfor %}</div>
 {% endif %}
 </div>
 <div class="mb-3">
 {{ form.campus_area.label(class="form-label") }}
 {{ form.campus_area(class="form-select") }}
 {% if form.campus_area.errors %}
-<div class="text-danger">
-{% for error in form.campus_area.errors %}<small>{{ error }}</small><br>{% endfor %}
-</div>
+<div class="text-danger small mt-1">{% for e in form.campus_area.errors %}{{ e }}{% endfor %}</div>
 {% endif %}
 </div>
-<div class="mb-3">
+<div class="mb-4">
 {{ form.activities.label(class="form-label") }}
-{{ form.activities(class="form-select") }}
-<small class="text-muted d-block mt-2">Hold Ctrl/Cmd to select multiple activities</small>
+<div class="text-muted small mb-1">Tap and hold to select multiple interests</div>
+{{ form.activities(class="form-select", size="5") }}
 {% if form.activities.errors %}
-<div class="text-danger">
-{% for error in form.activities.errors %}<small>{{ error }}</small><br>{% endfor %}
-</div>
+<div class="text-danger small mt-1">{% for e in form.activities.errors %}{{ e }}{% endfor %}</div>
 {% endif %}
 </div>
-<div class="d-grid gap-2 d-sm-flex justify-content-sm-end">
-{{ form.submit(class="btn btn-primary") }}
-<a href="{{ url_for('main.dashboard') }}" class="btn btn-outline-secondary">Cancel</a>
+<div class="d-flex gap-2 action-row">
+{{ form.submit(class="btn btn-primary fw-semibold") }}
+<a href="{{ url_for('main.dashboard') }}" class="btn btn-secondary">Cancel</a>
 </div>
 </form>
 </div>
+</div>
+
 </div>
 </div>
 </div>
