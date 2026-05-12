@@ -3,7 +3,7 @@
 <head>
     <title>Tukutane Dashboard</title>
     <meta charset="utf-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
     <link rel="stylesheet" href="{{url_for('static', filename='css/dashboard.css')}}">
     <style>
@@ -28,6 +28,23 @@
         }
         .btn-geo:hover { border-color: var(--primary); color: var(--primary); }
         .btn-geo:disabled { opacity: 0.45; cursor: not-allowed; }
+
+        /* Mobile improvements */
+        .form-control, .form-select { min-height: 44px; font-size: 1rem; }
+        .btn { min-height: 44px; }
+        .btn-sm { min-height: 40px; font-size: 0.9rem; }
+
+        @media (max-width: 576px) {
+            .form-control, .form-select { font-size: 16px; }
+            .filter-form .col-12 { margin-bottom: 0; }
+            .filter-actions { display: flex; gap: 0.5rem; }
+            .filter-actions .btn,
+            .filter-actions .btn-geo { flex: 1; min-height: 44px; }
+            .page-title { font-size: 1.4rem; }
+            .page-subtitle { font-size: 0.9rem; }
+            .event-card-footer { padding: 0.75rem; }
+            .page-bottom-pad { padding-bottom: 5rem; }
+        }
     </style>
 </head>
 <body>
@@ -39,7 +56,7 @@
 </button>
 <div class="collapse navbar-collapse" id="navbarNav">
 <div class="navbar-nav ms-auto">
-<span class="navbar-text me-3 text-muted">Welcome, {{ current_user.name }}</span>
+<span class="navbar-text me-3 text-muted d-none d-lg-inline">Welcome, {{ current_user.name }}</span>
 <a class="nav-link" href="{{ url_for('main.rsvps') }}">My RSVPs</a>
 <a class="nav-link" href="{{ url_for('main.create_event') }}">Create Event</a>
 <a class="nav-link" href="{{ url_for('main.profile') }}">Profile</a>
@@ -52,7 +69,7 @@
 </div>
 </nav>
 
-<div class="container mt-4">
+<div class="container mt-3 mt-md-4 page-bottom-pad">
 {% with messages = get_flashed_messages() %}
 {% if messages %}
 <div class="alert alert-info alert-dismissible fade show" role="alert">
@@ -62,12 +79,12 @@
 {% endif %}
 {% endwith %}
 
-<h2 class="mb-1">Discover Events</h2>
-<p class="text-muted mb-4">Find events happening across campus.</p>
+<h2 class="mb-1 page-title">Discover Events</h2>
+<p class="text-muted mb-3 page-subtitle">Find events happening across campus.</p>
 
-<form method="GET" action="{{ url_for('main.dashboard') }}" class="mb-4" id="filter-form">
-<div class="row g-3 align-items-end">
-<div class="col-md-4">
+<form method="GET" action="{{ url_for('main.dashboard') }}" class="mb-4 filter-form" id="filter-form">
+<div class="row g-2 align-items-end">
+<div class="col-12 col-sm-6 col-md-4">
 <label for="activity" class="form-label">Activity</label>
 <select name="activity" id="activity" class="form-select">
 <option value="">All Activities</option>
@@ -76,7 +93,7 @@
 {% endfor %}
 </select>
 </div>
-<div class="col-md-4">
+<div class="col-12 col-sm-6 col-md-4">
 <label for="campus_area" class="form-label">Campus / University</label>
 <select name="campus_area" id="campus_area" class="form-select">
 <option value="">All Campuses</option>
@@ -86,26 +103,28 @@
 </select>
 <div id="geo-status"></div>
 </div>
-<div class="col-md-4 d-flex gap-2">
+<div class="col-12 col-md-4">
+<div class="filter-actions">
 <button type="submit" class="btn btn-primary">Filter</button>
 <button type="button" class="btn-geo" id="geo-btn" title="Detect your nearest campus">
 📍 Near Me
 </button>
 </div>
 </div>
+</div>
 </form>
 
 {% if events %}
-<div class="row">
+<div class="row g-3">
 {% for event in events %}
-<div class="col-md-4 mb-4">
+<div class="col-12 col-sm-6 col-lg-4">
 <div class="card h-100">
 <div class="card-body">
 <h5 class="card-title">{{ event.title }}</h5>
 <p class="card-text text-muted mb-2">
 <span class="badge me-1">{{ event.activity.name }}</span> &bull; {{ event.campus_area.name }}
 </p>
-<p class="card-text">
+<p class="card-text mb-0">
 <strong>Date:</strong> {{ event.date }}<br>
 <strong>Time:</strong> {{ event.time }}<br>
 <strong>Capacity:</strong> {{ event.max_attendees }}<br>
@@ -115,13 +134,13 @@
 {% endif %}
 </p>
 </div>
-<div class="card-footer">
+<div class="card-footer event-card-footer">
 {% if event.organiser_id == current_user.id %}
-<button class="btn btn-sm btn-outline-secondary" disabled>You organised this</button>
+<button class="btn btn-sm btn-outline-secondary w-100" disabled>You organised this</button>
 {% elif rsvp and rsvp.status == 'confirmed' %}
-<a href="{{ url_for('main.cancel_rsvp', event_id=event.id) }}" class="btn btn-sm btn-warning" onclick="return confirm('Cancel your RSVP?')">Cancel RSVP</a>
+<a href="{{ url_for('main.cancel_rsvp', event_id=event.id) }}" class="btn btn-sm btn-warning w-100" onclick="return confirm('Cancel your RSVP?')">Cancel RSVP</a>
 {% else %}
-<a href="{{ url_for('main.rsvp', event_id=event.id) }}" class="btn btn-sm btn-primary">RSVP</a>
+<a href="{{ url_for('main.rsvp', event_id=event.id) }}" class="btn btn-sm btn-primary w-100">RSVP</a>
 {% endif %}
 </div>
 </div>
@@ -138,9 +157,7 @@ No events found. Try a different filter or <a href="{{ url_for('main.create_even
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
 <script>
 (function () {
-    // Real GPS coordinates for MMU buildings and all major Kenyan university campuses
     const areaCoords = {
-        // Multimedia University of Kenya (Ongata Rongai, Nairobi)
         "MMU - Main Block":     { lat: -1.39780, lng: 36.74650 },
         "MMU - Sports Centre":  { lat: -1.39750, lng: 36.74580 },
         "MMU - Library":        { lat: -1.39850, lng: 36.74720 },
@@ -149,8 +166,6 @@ No events found. Try a different filter or <a href="{{ url_for('main.create_even
         "MMU - Student Centre": { lat: -1.39760, lng: 36.74620 },
         "MMU - Lecture Block":  { lat: -1.39790, lng: 36.74640 },
         "MMU - Hostels":        { lat: -1.39920, lng: 36.74800 },
-
-        // Other Kenyan Universities
         "University of Nairobi":              { lat: -1.27990, lng: 36.81920 },
         "Kenyatta University":                { lat: -1.18170, lng: 36.92800 },
         "Strathmore University":              { lat: -1.30890, lng: 36.81200 },
@@ -171,8 +186,6 @@ No events found. Try a different filter or <a href="{{ url_for('main.create_even
         "Kirinyaga University":               { lat: -0.53800, lng: 37.28900 },
         "Pwani University":                   { lat: -3.63000, lng: 39.85100 },
         "Jaramogi Oginga Odinga University":  { lat:  0.05940, lng: 34.18050 },
-
-        // Legacy generic names (mapped to MMU central point for backward compat)
         "Main Block":      { lat: -1.39780, lng: 36.74650 },
         "Sports Centre":   { lat: -1.39750, lng: 36.74580 },
         "Library Grounds": { lat: -1.39850, lng: 36.74720 },
@@ -218,24 +231,18 @@ No events found. Try a different filter or <a href="{{ url_for('main.create_even
             function (pos) {
                 const userLat = pos.coords.latitude;
                 const userLng = pos.coords.longitude;
-
                 let nearest = null;
                 let minDist = Infinity;
-
                 campusAreas.forEach(function (area) {
                     const coords = areaCoords[area.name];
                     if (!coords) return;
                     const dist = haversineKm(userLat, userLng, coords.lat, coords.lng);
                     if (dist < minDist) { minDist = dist; nearest = area; }
                 });
-
                 btn.disabled = false;
-
                 if (nearest) {
                     select.value = nearest.id;
-                    const km = minDist < 1
-                        ? Math.round(minDist * 1000) + 'm away'
-                        : minDist.toFixed(1) + 'km away';
+                    const km = minDist < 1 ? Math.round(minDist * 1000) + 'm away' : minDist.toFixed(1) + 'km away';
                     status.className = 'success';
                     status.textContent = '📍 ' + nearest.name + ' (' + km + ')';
                     document.getElementById('filter-form').submit();
@@ -247,9 +254,7 @@ No events found. Try a different filter or <a href="{{ url_for('main.create_even
             function (err) {
                 btn.disabled = false;
                 status.className = 'error';
-                status.textContent = err.code === 1
-                    ? 'Location permission denied.'
-                    : 'Could not get your location.';
+                status.textContent = err.code === 1 ? 'Location permission denied.' : 'Could not get your location.';
             },
             { timeout: 8000 }
         );
