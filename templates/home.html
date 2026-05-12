@@ -3,10 +3,25 @@
 <head>
         <title>Tukutane - Social Event Management Platform</title>
         <meta charset='utf-8'>
-        <meta name="viewport" content="width=device-width, initial-scale=1">
+        <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=5">
         <meta name="description" content="Tukutane - Connect, discover, and manage campus events. A social event management platform for students.">
         <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
         <link rel="stylesheet" href="{{url_for('static', filename='css/home.css')}}">
+        <style>
+            .btn { min-height: 48px; font-size: 1rem; }
+            @media (max-width: 576px) {
+                .hero-section { min-height: auto !important; padding: 3rem 0 2.5rem; }
+                .hero-section h1 { font-size: 2rem; }
+                .hero-section .lead { font-size: 1rem; }
+                .hero-cta-group { flex-direction: column; gap: 0.75rem !important; }
+                .hero-cta-group .btn { width: 100%; }
+                .feature-card { padding: 1rem; }
+                .section-title { font-size: 1.6rem; }
+                .cta-section .d-flex { flex-direction: column; gap: 0.75rem !important; }
+                .cta-section .btn { width: 100%; max-width: 320px; margin: 0 auto; }
+                .page-bottom-pad { padding-bottom: 3rem; }
+            }
+        </style>
 </head>
 <body>
         <nav class="navbar navbar-expand-lg navbar-dark">
@@ -19,23 +34,23 @@
                         </button>
                         <div class="collapse navbar-collapse" id="navbarNav">
                                 <div class="navbar-nav ms-auto">
-                                        <a class="nav-link" href="#about">About  </a>
-                                        <a class="nav-link" href="#features">Features  </a>
-                                        <a class="nav-link" href="{{ url_for('main.signup') }}" class="btn btn-outline-light btn-sm ms-2">Sign Up</a>
+                                        <a class="nav-link" href="#about">About</a>
+                                        <a class="nav-link" href="#features">Features</a>
+                                        <a class="nav-link" href="{{ url_for('main.signup') }}">Sign Up</a>
                                 </div>
                         </div>
                 </div>
         </nav>
 
         <section class="hero-section py-5">
-                <div class="container d-flex justify-content-center align-items-center min-vh-100">
-                        <div class="text-center">
-                                <h1 class="display-4 mb-4 fw-bold">Welcome to Tukutane</h1>
-                                <p class="lead mb-4">Connect with fellow students and discover amazing events on campus!</p>
-                                <p class="mb-4 text-light">Your all-in-one platform for discovering, creating, and managing social events.</p>
-                                <div class="d-flex justify-content-center gap-3">
-                                        <a href="{{ url_for('main.signup') }}" class="btn btn-light btn-lg">Get Started</a>
-                                        <a href="{{ url_for('main.login') }}" class="btn btn-outline-light btn-lg">Sign In</a>
+                <div class="container d-flex justify-content-center align-items-center" style="min-height: 85vh;">
+                        <div class="text-center px-2">
+                                <h1 class="display-4 mb-3 fw-bold">Welcome to Tukutane</h1>
+                                <p class="lead mb-3">Connect with fellow students and discover amazing events on campus!</p>
+                                <p class="mb-4 text-light d-none d-sm-block">Your all-in-one platform for discovering, creating, and managing social events.</p>
+                                <div class="d-flex justify-content-center gap-3 hero-cta-group flex-wrap">
+                                        <a href="{{ url_for('main.signup') }}" class="btn btn-light btn-lg px-4">Get Started</a>
+                                        <a href="{{ url_for('main.login') }}" class="btn btn-outline-light btn-lg px-4">Sign In</a>
                                 </div>
                         </div>
                 </div>
@@ -43,34 +58,34 @@
 
         <section id="about" class="about-section py-5">
                 <div class="container">
-                        <div class="row mb-5">
+                        <div class="row mb-4">
                                 <div class="col-lg-10 mx-auto text-center">
-                                        <h2 class="h1 mb-4">About Tukutane</h2>
+                                        <h2 class="h1 mb-4 section-title">About Tukutane</h2>
                                         <p class="lead text-muted">
-                                                Tukutane is a dynamic social event management platform designed specifically for university students. 
-                                                Whether you're looking to organize a study group, social gathering, or campus-wide event, 
+                                                Tukutane is a dynamic social event management platform designed specifically for university students.
+                                                Whether you're looking to organize a study group, social gathering, or campus-wide event,
                                                 Tukutane makes it easy to connect with your community and create memorable experiences.
                                         </p>
                                 </div>
                         </div>
-                        <div class="row">
-                                <div class="col-md-6 mb-4">
+                        <div class="row g-3">
+                                <div class="col-12 col-md-6">
                                         <div class="card h-100 shadow-sm">
                                                 <div class="card-body">
                                                         <h5 class="card-title">Our Mission</h5>
                                                         <p class="card-text text-muted">
-                                                                To empower students by providing a seamless platform to discover, organize and participate 
+                                                                To empower students by providing a seamless platform to discover, organize and participate
                                                                 in social events that foster community, friendship and unforgettable campus experiences.
                                                         </p>
                                                 </div>
                                         </div>
                                 </div>
-                                <div class="col-md-6 mb-4">
+                                <div class="col-12 col-md-6">
                                         <div class="card h-100 shadow-sm">
                                                 <div class="card-body">
                                                         <h5 class="card-title">Our Vision</h5>
                                                         <p class="card-text text-muted">
-                                                                To be the go-to platform where every student can find their community, build connections, 
+                                                                To be the go-to platform where every student can find their community, build connections,
                                                                 and create lasting memories through impactful social events.
                                                         </p>
                                                 </div>
@@ -82,78 +97,48 @@
 
         <section id="features" class="features-section py-5">
                 <div class="container">
-                        <h2 class="h1 text-center mb-5">Why Choose Tukutane?</h2>
-                        <div class="row">
-                                <div class="col-md-4 mb-4">
-                                        <div class="feature-card text-center">
-                                                <div class="feature-icon mb-3">
-                                                        <div class="icon-circle">📅</div>
-                                                </div>
-                                                <h5 class="mb-3">Discover Events</h5>
-                                                <p class="text-muted">
-                                                        Browse through a curated list of upcoming campus events, activities, and social gatherings 
-                                                        tailored to your interests. Filter by activity type, campus location, and more.
-                                                </p>
+                        <h2 class="h1 text-center mb-5 section-title">Why Choose Tukutane?</h2>
+                        <div class="row g-3">
+                                <div class="col-12 col-sm-6 col-md-4">
+                                        <div class="feature-card text-center p-3">
+                                                <div class="feature-icon mb-3"><div class="icon-circle">📅</div></div>
+                                                <h5 class="mb-2">Discover Events</h5>
+                                                <p class="text-muted small">Browse upcoming campus events tailored to your interests. Filter by activity type, campus location, and more.</p>
                                         </div>
                                 </div>
-                                <div class="col-md-4 mb-4">
-                                        <div class="feature-card text-center">
-                                                <div class="feature-icon mb-3">
-                                                        <div class="icon-circle">🎯</div>
-                                                </div>
-                                                <h5 class="mb-3">Create & Manage</h5>
-                                                <p class="text-muted">
-                                                        Easily organize your own events with intuitive creation tools. Set dates, locations 
-                                                        and manage RSVPs effortlessly. Control capacity and track attendees in real-time.
-                                                </p>
+                                <div class="col-12 col-sm-6 col-md-4">
+                                        <div class="feature-card text-center p-3">
+                                                <div class="feature-icon mb-3"><div class="icon-circle">🎯</div></div>
+                                                <h5 class="mb-2">Create & Manage</h5>
+                                                <p class="text-muted small">Organize your own events with intuitive tools. Set dates, locations and manage RSVPs effortlessly.</p>
                                         </div>
                                 </div>
-                                <div class="col-md-4 mb-4">
-                                        <div class="feature-card text-center">
-                                                <div class="feature-icon mb-3">
-                                                        <div class="icon-circle">👥</div>
-                                                </div>
-                                                <h5 class="mb-3">Connect & Network</h5>
-                                                <p class="text-muted">
-                                                        Build your campus network and connect with like-minded students who share your interests 
-                                                        and passion for events. Grow your social circle effortlessly.
-                                                </p>
+                                <div class="col-12 col-sm-6 col-md-4">
+                                        <div class="feature-card text-center p-3">
+                                                <div class="feature-icon mb-3"><div class="icon-circle">👥</div></div>
+                                                <h5 class="mb-2">Connect & Network</h5>
+                                                <p class="text-muted small">Build your campus network and connect with like-minded students who share your interests.</p>
                                         </div>
                                 </div>
-                                <div class="col-md-4 mb-4">
-                                        <div class="feature-card text-center">
-                                                <div class="feature-icon mb-3">
-                                                        <div class="icon-circle">🔔</div>
-                                                </div>
-                                                <h5 class="mb-3">Stay Updated</h5>
-                                                <p class="text-muted">
-                                                        Never miss an event! Get instant notifications when events match your interests 
-                                                        or when friends RSVP to gatherings you're attending.
-                                                </p>
+                                <div class="col-12 col-sm-6 col-md-4">
+                                        <div class="feature-card text-center p-3">
+                                                <div class="feature-icon mb-3"><div class="icon-circle">🔔</div></div>
+                                                <h5 class="mb-2">Stay Updated</h5>
+                                                <p class="text-muted small">Never miss an event! Get instant notifications when events match your interests.</p>
                                         </div>
                                 </div>
-                                <div class="col-md-4 mb-4">
-                                        <div class="feature-card text-center">
-                                                <div class="feature-icon mb-3">
-                                                        <div class="icon-circle">📊</div>
-                                                </div>
-                                                <h5 class="mb-3">Organizer Tools</h5>
-                                                <p class="text-muted">
-                                                        As an event organizer, access powerful tools to manage your events, view attendee lists, 
-                                                        and make data-driven decisions to improve your events.
-                                                </p>
+                                <div class="col-12 col-sm-6 col-md-4">
+                                        <div class="feature-card text-center p-3">
+                                                <div class="feature-icon mb-3"><div class="icon-circle">📊</div></div>
+                                                <h5 class="mb-2">Organizer Tools</h5>
+                                                <p class="text-muted small">Access powerful tools to manage your events, view attendee lists, and improve your events.</p>
                                         </div>
                                 </div>
-                                <div class="col-md-4 mb-4">
-                                        <div class="feature-card text-center">
-                                                <div class="feature-icon mb-3">
-                                                        <div class="icon-circle">🎉</div>
-                                                </div>
-                                                <h5 class="mb-3">Campus Community</h5>
-                                                <p class="text-muted">
-                                                        Be part of a vibrant campus community. Discover new activities, join existing events, 
-                                                        and create experiences that matter.
-                                                </p>
+                                <div class="col-12 col-sm-6 col-md-4">
+                                        <div class="feature-card text-center p-3">
+                                                <div class="feature-icon mb-3"><div class="icon-circle">🎉</div></div>
+                                                <h5 class="mb-2">Campus Community</h5>
+                                                <p class="text-muted small">Be part of a vibrant campus community. Discover new activities and create experiences that matter.</p>
                                         </div>
                                 </div>
                         </div>
@@ -162,30 +147,22 @@
 
         <section class="how-it-works-section py-5">
                 <div class="container">
-                        <h2 class="h1 text-center mb-5">How It Works</h2>
-                        <div class="row">
-                                <div class="col-md-4 mb-4 text-center">
+                        <h2 class="h1 text-center mb-5 section-title">How It Works</h2>
+                        <div class="row g-4">
+                                <div class="col-12 col-md-4 text-center">
                                         <div class="step-number mb-3">1</div>
-                                        <h5 class="mb-3">Create Your Account</h5>
-                                        <p class="text-muted">
-                                                Sign up with your student email, select your campus area, and choose your interests 
-                                                to personalize your experience.
-                                        </p>
+                                        <h5 class="mb-2">Create Your Account</h5>
+                                        <p class="text-muted">Sign up with your student email, select your campus area, and choose your interests to personalize your experience.</p>
                                 </div>
-                                <div class="col-md-4 mb-4 text-center">
+                                <div class="col-12 col-md-4 text-center">
                                         <div class="step-number mb-3">2</div>
-                                        <h5 class="mb-3">Discover Events</h5>
-                                        <p class="text-muted">
-                                                Browse events filtered by your interests. Find activities that match your passion, 
-                                                from coding workshops to hiking adventures.
-                                        </p>
+                                        <h5 class="mb-2">Discover Events</h5>
+                                        <p class="text-muted">Browse events filtered by your interests. Find activities that match your passion, from coding workshops to hiking adventures.</p>
                                 </div>
-                                <div class="col-md-4 mb-4 text-center">
+                                <div class="col-12 col-md-4 text-center">
                                         <div class="step-number mb-3">3</div>
-                                        <h5 class="mb-3">Join & Connect</h5>
-                                        <p class="text-muted">
-                                                RSVP to events, meet new people, and build lasting connections within your campus community.
-                                        </p>
+                                        <h5 class="mb-2">Join & Connect</h5>
+                                        <p class="text-muted">RSVP to events, meet new people, and build lasting connections within your campus community.</p>
                                 </div>
                         </div>
                 </div>
@@ -193,76 +170,48 @@
 
         <section class="faq-section py-5">
                 <div class="container">
-                        <h2 class="h1 text-center mb-5">Frequently Asked Questions</h2>
+                        <h2 class="h1 text-center mb-5 section-title">Frequently Asked Questions</h2>
                         <div class="row">
                                 <div class="col-lg-8 mx-auto">
                                         <div class="accordion" id="faqAccordion">
                                                 <div class="accordion-item mb-3">
                                                         <h3 class="accordion-header">
-                                                                <button class="accordion-button" type="button" data-bs-toggle="collapse" data-bs-target="#faq1">
-                                                                        Who can use Tukutane?
-                                                                </button>
+                                                                <button class="accordion-button" type="button" data-bs-toggle="collapse" data-bs-target="#faq1">Who can use Tukutane?</button>
                                                         </h3>
                                                         <div id="faq1" class="accordion-collapse collapse show" data-bs-parent="#faqAccordion">
-                                                                <div class="accordion-body">
-                                                                        Tukutane is designed for university students. Any student with a valid campus email 
-                                                                        can sign up and start discovering or creating events on campus.
-                                                                </div>
+                                                                <div class="accordion-body">Tukutane is designed for university students. Any student with a valid campus email can sign up and start discovering or creating events on campus.</div>
                                                         </div>
                                                 </div>
                                                 <div class="accordion-item mb-3">
                                                         <h3 class="accordion-header">
-                                                                <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#faq2">
-                                                                        Is it free to use?
-                                                                </button>
+                                                                <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#faq2">Is it free to use?</button>
                                                         </h3>
                                                         <div id="faq2" class="accordion-collapse collapse" data-bs-parent="#faqAccordion">
-                                                                <div class="accordion-body">
-                                                                        Yes! Tukutane is completely free for all students. There are no hidden fees or 
-                                                                        subscription costs. Create and join as many events as you like.
-                                                                </div>
+                                                                <div class="accordion-body">Yes! Tukutane is completely free for all students. There are no hidden fees or subscription costs. Create and join as many events as you like.</div>
                                                         </div>
                                                 </div>
                                                 <div class="accordion-item mb-3">
                                                         <h3 class="accordion-header">
-                                                                <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#faq3">
-                                                                        How do I create an event?
-                                                                </button>
+                                                                <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#faq3">How do I create an event?</button>
                                                         </h3>
                                                         <div id="faq3" class="accordion-collapse collapse" data-bs-parent="#faqAccordion">
-                                                                <div class="accordion-body">
-                                                                        After logging in, click on "Create Event" in the navigation. Fill in the event details 
-                                                                        including title, description, activity type, campus location, date, time, and capacity. 
-                                                                        That's it! Your event will be visible to all students.
-                                                                </div>
+                                                                <div class="accordion-body">After logging in, click "Create Event" in the navigation. Fill in the event details including title, description, activity type, campus location, date, time, and capacity.</div>
                                                         </div>
                                                 </div>
                                                 <div class="accordion-item mb-3">
                                                         <h3 class="accordion-header">
-                                                                <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#faq4">
-                                                                        Can I cancel my RSVP?
-                                                                </button>
+                                                                <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#faq4">Can I cancel my RSVP?</button>
                                                         </h3>
                                                         <div id="faq4" class="accordion-collapse collapse" data-bs-parent="#faqAccordion">
-                                                                <div class="accordion-body">
-                                                                        Absolutely! You can cancel your RSVP at any time before the event. Simply go to 
-                                                                        the event on your dashboard and click "Cancel RSVP". Your spot will be released 
-                                                                        for other students.
-                                                                </div>
+                                                                <div class="accordion-body">Absolutely! You can cancel your RSVP at any time before the event. Go to the event on your dashboard and click "Cancel RSVP".</div>
                                                         </div>
                                                 </div>
                                                 <div class="accordion-item mb-3">
                                                         <h3 class="accordion-header">
-                                                                <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#faq5">
-                                                                        What if I'm an event organizer?
-                                                                </button>
+                                                                <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#faq5">What if I'm an event organizer?</button>
                                                         </h3>
                                                         <div id="faq5" class="accordion-collapse collapse" data-bs-parent="#faqAccordion">
-                                                                <div class="accordion-body">
-                                                                        Any student can be an event organizer! When you create an event, you become the 
-                                                                        organizer. You can edit, update, and cancel your events. Access the Organizer 
-                                                                        Dashboard to view RSVPs and manage your events.
-                                                                </div>
+                                                                <div class="accordion-body">Any student can be an event organizer! When you create an event, you become the organizer. You can edit, update, and cancel your events from the Organizer Dashboard.</div>
                                                         </div>
                                                 </div>
                                         </div>
@@ -271,13 +220,13 @@
                 </div>
         </section>
 
-        <section class="cta-section py-5">
+        <section class="cta-section py-5 page-bottom-pad">
                 <div class="container text-center">
-                        <h2 class="h2 mb-4">Ready to Join the Community?</h2>
+                        <h2 class="h2 mb-3 section-title">Ready to Join the Community?</h2>
                         <p class="lead mb-4">Start discovering and creating amazing campus events today!</p>
-                        <div class="d-flex justify-content-center gap-3">
-                                <a href="{{ url_for('main.signup') }}" class="btn btn-light btn-lg">Sign Up Now</a>
-                                <a href="{{ url_for('main.login') }}" class="btn btn-outline-light btn-lg">Already a Member?</a>
+                        <div class="d-flex justify-content-center gap-3 flex-wrap">
+                                <a href="{{ url_for('main.signup') }}" class="btn btn-light btn-lg px-4">Sign Up Now</a>
+                                <a href="{{ url_for('main.login') }}" class="btn btn-outline-light btn-lg px-4">Already a Member?</a>
                         </div>
                 </div>
         </section>
