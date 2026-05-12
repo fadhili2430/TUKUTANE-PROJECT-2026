@@ -27,7 +27,9 @@ jobs:
 
       - name: Make gradlew executable
         working-directory: android
-        run: chmod +x gradlew
+        run: |
+          sed -i 's/\r$//' gradlew
+          chmod +x gradlew
 
       - name: Cache Gradle packages
         uses: actions/cache@v4
