@@ -25,6 +25,20 @@ jobs:
       - name: Set up Android SDK
         uses: android-actions/setup-android@v3
 
+      - name: Ensure gradle-wrapper.jar exists
+        working-directory: android
+        run: |
+          if [ ! -f gradle/wrapper/gradle-wrapper.jar ]; then
+            echo "gradle-wrapper.jar missing — downloading..."
+            mkdir -p gradle/wrapper
+            curl -fsSL \
+              "https://raw.githubusercontent.com/gradle/gradle/master/gradle/wrapper/gradle-wrapper.jar" \
+              -o gradle/wrapper/gradle-wrapper.jar
+            echo "Downloaded: $(wc -c < gradle/wrapper/gradle-wrapper.jar) bytes"
+          else
+            echo "gradle-wrapper.jar present: $(wc -c < gradle/wrapper/gradle-wrapper.jar) bytes"
+          fi
+
       - name: Make gradlew executable
         working-directory: android
         run: |
