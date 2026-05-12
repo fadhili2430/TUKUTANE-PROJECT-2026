@@ -426,8 +426,8 @@ class MainActivity : AppCompatActivity() {
 
                 val label = if (count == 1) "1 upcoming event" else "$count upcoming events"
 
-                val tapIntent = Intent(context, MainActivity::class.java).apply {
-                    flags = Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_SINGLE_TOP
+                val tapIntent = Intent(context, SplashActivity::class.java).apply {
+                    flags = Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TASK
                 }
                 val tapPendingIntent = PendingIntent.getActivity(
                     context, 0, tapIntent,
