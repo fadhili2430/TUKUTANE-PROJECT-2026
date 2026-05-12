@@ -36,7 +36,7 @@
    The application will start and automatically populate initial data.
 
 7. **Access the App**
-   Visit (https://tukutaneproject.pythonanywhere.com/)in your browser.
+   Visit https://tukutaneproject.pythonanywhere.com/ in your browser.
    or
    download the apk
 
