@@ -29,7 +29,6 @@
         .btn-geo:hover { border-color: var(--primary); color: var(--primary); }
         .btn-geo:disabled { opacity: 0.45; cursor: not-allowed; }
 
-        /* Mobile improvements */
         .form-control, .form-select { min-height: 44px; font-size: 1rem; }
         .btn { min-height: 44px; }
         .btn-sm { min-height: 40px; font-size: 0.9rem; }
@@ -83,6 +82,7 @@
 <p class="text-muted mb-3 page-subtitle">Find events happening across campus.</p>
 
 <form method="GET" action="{{ url_for('main.dashboard') }}" class="mb-4 filter-form" id="filter-form">
+<input type="hidden" name="university" id="university-hidden" value="{{ request.args.get('university', '') }}">
 <div class="row g-2 align-items-end">
 <div class="col-12 col-sm-6 col-md-4">
 <label for="activity" class="form-label">Activity</label>
@@ -101,12 +101,16 @@
 <option value="{{ area.id }}" {% if request.args.get('campus_area') == area.id|string %}selected{% endif %}>{{ area.name }}</option>
 {% endfor %}
 </select>
-<div id="geo-status"></div>
+<div id="geo-status">
+{% if request.args.get('university') %}
+<span class="success">📍 Showing all events at {{ request.args.get('university') }}</span>
+{% endif %}
+</div>
 </div>
 <div class="col-12 col-md-4">
 <div class="filter-actions">
 <button type="submit" class="btn btn-primary">Filter</button>
-<button type="button" class="btn-geo" id="geo-btn" title="Detect your nearest campus">
+<button type="button" class="btn-geo" id="geo-btn" title="Find events at your nearest campus">
 📍 Near Me
 </button>
 </div>
@@ -157,65 +161,49 @@ No events found. Try a different filter or <a href="{{ url_for('main.create_even
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
 <script>
 (function () {
-    const areaCoords = {
-        "MMU - Main Block":     { lat: -1.39780, lng: 36.74650 },
-        "MMU - Sports Centre":  { lat: -1.39750, lng: 36.74580 },
-        "MMU - Library":        { lat: -1.39850, lng: 36.74720 },
-        "MMU - Cafeteria":      { lat: -1.39800, lng: 36.74670 },
-        "MMU - Computer Lab":   { lat: -1.39830, lng: 36.74700 },
-        "MMU - Student Centre": { lat: -1.39760, lng: 36.74620 },
-        "MMU - Lecture Block":  { lat: -1.39790, lng: 36.74640 },
-        "MMU - Hostels":        { lat: -1.39920, lng: 36.74800 },
-        "University of Nairobi":              { lat: -1.27990, lng: 36.81920 },
-        "Kenyatta University":                { lat: -1.18170, lng: 36.92800 },
-        "Strathmore University":              { lat: -1.30890, lng: 36.81200 },
-        "JKUAT":                              { lat: -1.09080, lng: 37.00990 },
-        "Technical University of Kenya":      { lat: -1.28750, lng: 36.83030 },
-        "USIU-Africa":                        { lat: -1.21920, lng: 36.88270 },
-        "Daystar University":                 { lat: -1.46700, lng: 36.98400 },
-        "Catholic University (CUEA)":         { lat: -1.31500, lng: 36.78000 },
-        "Moi University":                     { lat:  0.28270, lng: 35.28330 },
-        "Maseno University":                  { lat: -0.00650, lng: 34.60120 },
-        "Egerton University":                 { lat: -0.36890, lng: 35.94940 },
-        "Dedan Kimathi University":           { lat: -0.42000, lng: 36.95000 },
-        "Mount Kenya University":             { lat: -1.03700, lng: 37.08800 },
-        "Kisii University":                   { lat: -0.68130, lng: 34.76610 },
-        "Laikipia University":                { lat:  0.03600, lng: 36.36400 },
-        "Machakos University":                { lat: -1.51900, lng: 37.26300 },
-        "Chuka University":                   { lat: -0.33500, lng: 37.64900 },
-        "Kirinyaga University":               { lat: -0.53800, lng: 37.28900 },
-        "Pwani University":                   { lat: -3.63000, lng: 39.85100 },
-        "Jaramogi Oginga Odinga University":  { lat:  0.05940, lng: 34.18050 },
-        "Main Block":      { lat: -1.39780, lng: 36.74650 },
-        "Sports Centre":   { lat: -1.39750, lng: 36.74580 },
-        "Library Grounds": { lat: -1.39850, lng: 36.74720 },
-        "Cafeteria":       { lat: -1.39800, lng: 36.74670 },
-        "Lecture Room 1":  { lat: -1.39790, lng: 36.74640 },
-        "Computer Lab":    { lat: -1.39830, lng: 36.74700 },
-        "Student Union":   { lat: -1.39760, lng: 36.74620 },
-        "Dormitory Area":  { lat: -1.39920, lng: 36.74800 },
+    // University-level coordinates (campus centre points).
+    // Matching at university level instead of individual building level prevents
+    // GPS from ambiguously landing on whichever building happens to be nearest
+    // (e.g. always picking the dorm when all buildings are within 200 m).
+    var universityCoords = {
+        "MMU":                                  { lat: -1.3985, lng: 36.7466 },
+        "University of Nairobi":                { lat: -1.2799, lng: 36.8192 },
+        "Kenyatta University":                  { lat: -1.1817, lng: 36.9280 },
+        "Strathmore University":                { lat: -1.3089, lng: 36.8120 },
+        "JKUAT":                                { lat: -1.0908, lng: 37.0099 },
+        "Technical University of Kenya":        { lat: -1.2875, lng: 36.8303 },
+        "USIU-Africa":                          { lat: -1.2192, lng: 36.8827 },
+        "Daystar University":                   { lat: -1.4670, lng: 36.9840 },
+        "Catholic University (CUEA)":           { lat: -1.3150, lng: 36.7800 },
+        "Moi University":                       { lat:  0.2827, lng: 35.2833 },
+        "Maseno University":                    { lat: -0.0065, lng: 34.6012 },
+        "Egerton University":                   { lat: -0.3689, lng: 35.9494 },
+        "Dedan Kimathi University":             { lat: -0.4200, lng: 36.9500 },
+        "Mount Kenya University":               { lat: -1.0370, lng: 37.0880 },
+        "Kisii University":                     { lat: -0.6813, lng: 34.7661 },
+        "Laikipia University":                  { lat:  0.0360, lng: 36.3640 },
+        "Machakos University":                  { lat: -1.5190, lng: 37.2630 },
+        "Chuka University":                     { lat: -0.3350, lng: 37.6490 },
+        "Kirinyaga University":                 { lat: -0.5380, lng: 37.2890 },
+        "Pwani University":                     { lat: -3.6300, lng: 39.8510 },
+        "Jaramogi Oginga Odinga University":    { lat:  0.0594, lng: 34.1805 }
     };
 
-    const campusAreas = [
-        {% for area in campus_areas %}
-        { id: "{{ area.id }}", name: "{{ area.name }}" },
-        {% endfor %}
-    ];
-
     function haversineKm(lat1, lng1, lat2, lng2) {
-        const R = 6371;
-        const dLat = (lat2 - lat1) * Math.PI / 180;
-        const dLng = (lng2 - lng1) * Math.PI / 180;
-        const a = Math.sin(dLat / 2) ** 2 +
-                  Math.cos(lat1 * Math.PI / 180) *
-                  Math.cos(lat2 * Math.PI / 180) *
-                  Math.sin(dLng / 2) ** 2;
+        var R = 6371;
+        var dLat = (lat2 - lat1) * Math.PI / 180;
+        var dLng = (lng2 - lng1) * Math.PI / 180;
+        var a = Math.sin(dLat / 2) * Math.sin(dLat / 2) +
+                Math.cos(lat1 * Math.PI / 180) * Math.cos(lat2 * Math.PI / 180) *
+                Math.sin(dLng / 2) * Math.sin(dLng / 2);
         return R * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
     }
 
-    const btn    = document.getElementById('geo-btn');
-    const status = document.getElementById('geo-status');
-    const select = document.getElementById('campus_area');
+    var btn           = document.getElementById('geo-btn');
+    var status        = document.getElementById('geo-status');
+    var campusSelect  = document.getElementById('campus_area');
+    var universityHid = document.getElementById('university-hidden');
+    var form          = document.getElementById('filter-form');
 
     if (!navigator.geolocation) {
         btn.disabled = true;
@@ -225,27 +213,40 @@ No events found. Try a different filter or <a href="{{ url_for('main.create_even
     btn.addEventListener('click', function () {
         btn.disabled = true;
         status.className = '';
-        status.textContent = 'Detecting your location…';
+        status.textContent = 'Detecting your location\u2026';
 
         navigator.geolocation.getCurrentPosition(
             function (pos) {
-                const userLat = pos.coords.latitude;
-                const userLng = pos.coords.longitude;
-                let nearest = null;
-                let minDist = Infinity;
-                campusAreas.forEach(function (area) {
-                    const coords = areaCoords[area.name];
-                    if (!coords) return;
-                    const dist = haversineKm(userLat, userLng, coords.lat, coords.lng);
-                    if (dist < minDist) { minDist = dist; nearest = area; }
+                var userLat = pos.coords.latitude;
+                var userLng = pos.coords.longitude;
+
+                var nearest = null;
+                var minDist = Infinity;
+
+                Object.keys(universityCoords).forEach(function (uniName) {
+                    var c = universityCoords[uniName];
+                    var dist = haversineKm(userLat, userLng, c.lat, c.lng);
+                    if (dist < minDist) {
+                        minDist = dist;
+                        nearest = uniName;
+                    }
                 });
+
                 btn.disabled = false;
+
                 if (nearest) {
-                    select.value = nearest.id;
-                    const km = minDist < 1 ? Math.round(minDist * 1000) + 'm away' : minDist.toFixed(1) + 'km away';
+                    var km = minDist < 1
+                        ? Math.round(minDist * 1000) + 'm away'
+                        : minDist.toFixed(1) + 'km away';
+
                     status.className = 'success';
-                    status.textContent = '📍 ' + nearest.name + ' (' + km + ')';
-                    document.getElementById('filter-form').submit();
+                    status.textContent = '\uD83D\uDCCD ' + nearest + ' (' + km + ')';
+
+                    // Pass university name so the server shows ALL events from that
+                    // campus, not just one specific building.
+                    campusSelect.value = '';
+                    universityHid.value = nearest;
+                    form.submit();
                 } else {
                     status.className = 'error';
                     status.textContent = 'Could not match your location to a campus.';
@@ -254,10 +255,17 @@ No events found. Try a different filter or <a href="{{ url_for('main.create_even
             function (err) {
                 btn.disabled = false;
                 status.className = 'error';
-                status.textContent = err.code === 1 ? 'Location permission denied.' : 'Could not get your location.';
+                status.textContent = err.code === 1
+                    ? 'Location permission denied.'
+                    : 'Could not get your location.';
             },
-            { timeout: 8000 }
+            { timeout: 10000, enableHighAccuracy: true }
         );
+    });
+
+    // When the user manually picks from the dropdown, clear the university param.
+    campusSelect.addEventListener('change', function () {
+        universityHid.value = '';
     });
 })();
 </script>
