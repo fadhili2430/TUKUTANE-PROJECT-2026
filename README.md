@@ -36,7 +36,9 @@
    The application will start and automatically populate initial data.
 
 7. **Access the App**
-   Visit https://tukutane-project-2026--fadhilijonan19.replit.app/ in your browser.
+   Visit (https://tukutaneproject.pythonanywhere.com/)in your browser.
+   or
+   download the apk
 
 ### Prerequisites
 - Python 3.x installed
