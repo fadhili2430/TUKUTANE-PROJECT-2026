@@ -50,24 +50,25 @@ jobs:
           path: android/app/build/outputs/apk/debug/app-debug.apk
           retention-days: 30
 
-      - name: Decode keystore (release only)
-        if: ${{ secrets.KEYSTORE_BASE64 != '' }}
-        working-directory: android
-        run: echo "${{ secrets.KEYSTORE_BASE64 }}" | base64 --decode > app/keystore.jks
-
-      - name: Build release APK
-        if: ${{ secrets.KEYSTORE_BASE64 != '' }}
+      - name: Build and sign release APK
         working-directory: android
         env:
+          KEYSTORE_B64: ${{ secrets.KEYSTORE_BASE64 }}
           KEYSTORE_FILE: keystore.jks
           KEYSTORE_PASSWORD: ${{ secrets.KEYSTORE_PASSWORD }}
           KEY_ALIAS: ${{ secrets.KEY_ALIAS }}
           KEY_PASSWORD: ${{ secrets.KEY_PASSWORD }}
-        run: ./gradlew assembleRelease --no-daemon
+        run: |
+          if [ -n "$KEYSTORE_B64" ]; then
+            echo "$KEYSTORE_B64" | base64 --decode > app/keystore.jks
+            ./gradlew assembleRelease --no-daemon
+          else
+            echo "No keystore secret configured — skipping release build."
+          fi
 
       - name: Upload release APK
-        if: ${{ secrets.KEYSTORE_BASE64 != '' }}
         uses: actions/upload-artifact@v4
+        if: hashFiles('android/app/build/outputs/apk/release/app-release.apk') != ''
         with:
           name: tukutane-release
           path: android/app/build/outputs/apk/release/app-release.apk
