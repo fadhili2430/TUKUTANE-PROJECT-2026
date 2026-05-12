@@ -133,8 +133,8 @@
 <strong>Time:</strong> {{ event.time }}<br>
 <strong>Capacity:</strong> {{ event.max_attendees }}<br>
 {% set rsvp = event.rsvps | selectattr('user_id', 'equalto', current_user.id) | first %}
-{% if rsvp %}
-<strong>Your RSVP:</strong> <span class="text-success">{{ rsvp.status }}</span>
+{% if rsvp and rsvp.status == 'confirmed' %}
+<strong>Your RSVP:</strong> <span class="text-success">confirmed</span>
 {% endif %}
 </p>
 </div>
@@ -142,7 +142,12 @@
 {% if event.organiser_id == current_user.id %}
 <button class="btn btn-sm btn-outline-secondary w-100" disabled>You organised this</button>
 {% elif rsvp and rsvp.status == 'confirmed' %}
-<a href="{{ url_for('main.cancel_rsvp', event_id=event.id) }}" class="btn btn-sm btn-warning w-100" onclick="return confirm('Cancel your RSVP?')">Cancel RSVP</a>
+<a href="{{ url_for('main.cancel_rsvp', event_id=event.id) }}"
+   class="btn btn-sm btn-warning w-100 cancel-rsvp-btn"
+   data-event-id="{{ event.id }}"
+   onclick="return confirmCancelRsvp(event, this)">
+   Cancel RSVP
+</a>
 {% else %}
 <a href="{{ url_for('main.rsvp', event_id=event.id) }}" class="btn btn-sm btn-primary w-100">RSVP</a>
 {% endif %}
@@ -160,6 +165,19 @@ No events found. Try a different filter or <a href="{{ url_for('main.create_even
 
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
 <script>
+// Cancel RSVP: cancel the Android reminder then follow the link
+function confirmCancelRsvp(e, el) {
+    if (!confirm('Cancel your RSVP for this event?')) {
+        e.preventDefault();
+        return false;
+    }
+    var eventId = parseInt(el.getAttribute('data-event-id'), 10);
+    if (typeof window.TukutaneAndroid !== 'undefined' && window.TukutaneAndroid.isNativeApp()) {
+        try { window.TukutaneAndroid.cancelEventReminder(eventId); } catch (ex) {}
+    }
+    return true;
+}
+
 (function () {
     // University-level coordinates (campus centre points).
     // Matching at university level instead of individual building level prevents
@@ -242,8 +260,6 @@ No events found. Try a different filter or <a href="{{ url_for('main.create_even
                     status.className = 'success';
                     status.textContent = '\uD83D\uDCCD ' + nearest + ' (' + km + ')';
 
-                    // Pass university name so the server shows ALL events from that
-                    // campus, not just one specific building.
                     campusSelect.value = '';
                     universityHid.value = nearest;
                     form.submit();
@@ -263,7 +279,6 @@ No events found. Try a different filter or <a href="{{ url_for('main.create_even
         );
     });
 
-    // When the user manually picks from the dropdown, clear the university param.
     campusSelect.addEventListener('change', function () {
         universityHid.value = '';
     });
