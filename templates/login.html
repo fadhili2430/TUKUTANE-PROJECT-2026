@@ -32,7 +32,7 @@
 </div>
 <div class="card-body">
 <form action="/login" method="POST" novalidate>
-{{ form.csrf_token() }}
+{{ form.hidden_tag() }}
 <div class="mb-3">
 {{ form.email.label(class="form-label") }}
 {{ form.email(class="form-control", autocomplete="email", inputmode="email", placeholder="your@email.com") }}
