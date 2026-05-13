@@ -350,56 +350,73 @@ def rsvp(event_id):
     return redirect(url_for("main.dashboard"))
 
 def _send_rsvp_notifications(event, attendee):
-    event_url = f"https://tukutaneproject.pythonanywhere.com/dashboard"
+    event_url = "https://tukutaneproject.pythonanywhere.com/dashboard"
 
-    # ── Email to attendee ──────────────────────────────────────────────────
+    organiser = None
+    try:
+        organiser = User.query.get(event.organiser_id)
+    except Exception as e:
+        logger.error(f"RSVP notify: could not load organiser: {e}")
+
+    # ── 1. Confirmation email to attendee ──────────────────────────────────
     if MAIL_ENABLED and mail and Message:
         try:
-            msg_attendee = Message(
+            mail.send(Message(
                 subject=f"Tukutane — You're going to {event.title}!",
                 recipients=[attendee.email],
                 html=render_template("email/rsvp_confirmation.html", event=event, user=attendee)
-            )
-            mail.send(msg_attendee)
+            ))
+            logger.info(f"RSVP confirmation email sent to {attendee.email}")
         except Exception as e:
             logger.error(f"RSVP confirmation email failed: {e}")
+    else:
+        logger.warning("RSVP confirmation email skipped — mail not configured")
 
-    # ── Email + Push notification to organiser ─────────────────────────────
-    try:
-        organiser = User.query.get(event.organiser_id)
-        if organiser and organiser.email != attendee.email:
-            # Email
-            if MAIL_ENABLED and mail and Message:
-                try:
-                    msg_organiser = Message(
-                        subject=f"Tukutane — New RSVP for {event.title}",
-                        recipients=[organiser.email],
-                        html=render_template("email/rsvp_organiser_notify.html",
-                                             event=event, attendee=attendee, organiser=organiser)
-                    )
-                    mail.send(msg_organiser)
-                except Exception as e:
-                    logger.error(f"RSVP organiser email failed: {e}")
+    # ── 2. Confirmation push to attendee ───────────────────────────────────
+    if attendee.fcm_token:
+        try:
+            _send_push(
+                fcm_token=attendee.fcm_token,
+                title=f"You're going to {event.title}!",
+                body="RSVP confirmed. See you there!",
+                url=event_url
+            )
+        except Exception as e:
+            logger.error(f"RSVP attendee push failed: {e}")
+    else:
+        logger.info(f"RSVP attendee push skipped — no FCM token for {attendee.email}")
 
-            # Push notification (FCM)
-            if organiser.fcm_token:
+    # ── 3. Organiser email notification ────────────────────────────────────
+    if organiser and organiser.email != attendee.email:
+        if MAIL_ENABLED and mail and Message:
+            try:
+                mail.send(Message(
+                    subject=f"Tukutane — New RSVP for {event.title}",
+                    recipients=[organiser.email],
+                    html=render_template("email/rsvp_organiser_notify.html",
+                                         event=event, attendee=attendee, organiser=organiser)
+                ))
+                logger.info(f"RSVP organiser email sent to {organiser.email}")
+            except Exception as e:
+                logger.error(f"RSVP organiser email failed: {e}")
+        else:
+            logger.warning("RSVP organiser email skipped — mail not configured")
+
+        # ── 4. Organiser push notification ─────────────────────────────────
+        if organiser.fcm_token:
+            try:
                 _send_push(
                     fcm_token=organiser.fcm_token,
                     title=f"New RSVP — {event.title}",
                     body=f"{attendee.name} just joined your event!",
                     url=event_url
                 )
-
-        # ── Push notification to attendee too (confirmation) ───────────────
-        if attendee.fcm_token:
-            _send_push(
-                fcm_token=attendee.fcm_token,
-                title=f"You're going to {event.title}!",
-                body=f"RSVP confirmed. See you there!",
-                url=event_url
-            )
-    except Exception as e:
-        logger.error(f"RSVP notification error: {e}")
+            except Exception as e:
+                logger.error(f"RSVP organiser push failed: {e}")
+        else:
+            logger.info(f"RSVP organiser push skipped — no FCM token for {organiser.email}")
+    elif organiser and organiser.email == attendee.email:
+        logger.info("RSVP organiser notifications skipped — organiser is the attendee")
 
 # ─── Cancel RSVP ─────────────────────────────────────────────────────────────
 @main.route("/cancel_rsvp/<int:event_id>")
