@@ -65,7 +65,7 @@ def _send_push(fcm_token: str, title: str, body: str, url: str = ''):
         logger.error(f"Push notification failed: {e}")
 
 # ─── App version endpoint (used by Android for auto-update check) ────────────
-APP_VERSION = '1.0.3'
+APP_VERSION = '1.0.4'
 APK_DOWNLOAD_URL = 'https://github.com/fadhili2430/TUKUTANE-PROJECT-2026/releases/latest'
 
 @main.route('/api/version')
