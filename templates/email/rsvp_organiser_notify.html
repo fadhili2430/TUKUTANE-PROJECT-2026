@@ -1,0 +1,31 @@
+<!DOCTYPE html>
+<html>
+<head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"></head>
+<body style="margin:0;padding:0;background:#0f172a;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;">
+<table width="100%" cellpadding="0" cellspacing="0" style="background:#0f172a;padding:40px 20px;">
+<tr><td align="center">
+<table width="100%" style="max-width:520px;background:#1e293b;border-radius:12px;overflow:hidden;border:1px solid #334155;">
+<tr><td style="background:#226BF9;padding:28px 32px;">
+<h1 style="margin:0;color:#fff;font-size:24px;font-weight:700;">🎉 Tukutane</h1>
+</td></tr>
+<tr><td style="padding:32px;">
+<h2 style="margin:0 0 16px;color:#f1f5f9;font-size:20px;">New RSVP for your event! 🙌</h2>
+<p style="color:#94a3b8;line-height:1.6;margin:0 0 24px;">Hi {{ organiser.name }}, someone just RSVPed to your event:</p>
+<div style="background:#263348;border-radius:8px;padding:20px;margin:0 0 24px;border-left:4px solid #4ade80;">
+<p style="margin:0 0 8px;color:#f1f5f9;font-size:18px;font-weight:600;">{{ event.title }}</p>
+<p style="margin:0 0 6px;color:#94a3b8;font-size:14px;">📅 {{ event.date }} &nbsp;|&nbsp; 🕐 {{ event.time }}</p>
+<p style="margin:0;color:#94a3b8;font-size:14px;">📍 {{ event.campus_area.name }}</p>
+</div>
+<p style="color:#94a3b8;margin:0 0 8px;">New attendee: <strong style="color:#cbd5e1;">{{ attendee.name }}</strong> ({{ attendee.email }})</p>
+<p style="color:#94a3b8;margin:0 0 28px;">View the full attendee list from your Organizer Dashboard on Tukutane.</p>
+<hr style="border:none;border-top:1px solid #334155;margin:0 0 20px;">
+<p style="color:#64748b;font-size:13px;margin:0;">Keep up the great work organising events! 🎯</p>
+</td></tr>
+<tr><td style="background:#0f172a;padding:20px 32px;text-align:center;">
+<p style="color:#475569;font-size:12px;margin:0;">Tukutane — Campus Event Platform</p>
+</td></tr>
+</table>
+</td></tr>
+</table>
+</body>
+</html>
