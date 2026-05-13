@@ -24,6 +24,7 @@ jobs:
       - name: Bump version
         id: version
         run: |
+          git pull --rebase origin master || git pull --rebase origin main || true
           VERSION=$(cat version.txt 2>/dev/null || echo "1.0.0")
           IFS='.' read -ra PARTS <<< "$VERSION"
           PATCH=$(( ${PARTS[2]} + 1 ))
@@ -36,8 +37,8 @@ jobs:
           git config user.name "github-actions[bot]"
           git add version.txt app/routes.py \
             android/app/src/main/java/com/tukutane/app/MainActivity.kt
-          git commit -m "chore: auto-bump version to $NEW [skip ci]"
-          git push
+          git commit -m "chore: auto-bump version to $NEW [skip ci]" || true
+          git push --force-with-lease
           echo "new_version=$NEW" >> $GITHUB_OUTPUT
 
       - name: Set up JDK 17
