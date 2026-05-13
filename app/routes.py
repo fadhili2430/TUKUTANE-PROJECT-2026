@@ -65,7 +65,7 @@ def _send_push(fcm_token: str, title: str, body: str, url: str = ''):
         logger.error(f"Push notification failed: {e}")
 
 # ─── App version endpoint (used by Android for auto-update check) ────────────
-APP_VERSION = '1.0.13'
+APP_VERSION = '1.0.5'
 APK_DOWNLOAD_URL = 'https://github.com/fadhili2430/TUKUTANE-PROJECT-2026/releases/latest'
 
 @main.route('/api/version')
@@ -174,6 +174,21 @@ def signup():
             db.session.add(user)
             db.session.commit()
             login_user(user)
+
+            # ── Welcome email ──────────────────────────────────────────────
+            if MAIL_ENABLED and mail and Message:
+                try:
+                    msg_welcome = Message(
+                        subject="Welcome to Tukutane!",
+                        recipients=[user.email],
+                        html=render_template("email/welcome.html", user=user)
+                    )
+                    mail.send(msg_welcome)
+                    logger.info(f"Welcome email sent to {user.email}")
+                except Exception as mail_err:
+                    logger.error(f"Welcome email failed: {mail_err}")
+
+            flash(f"Welcome to Tukutane, {user.name}! Check your email for a welcome message.")
             return redirect(url_for("main.dashboard"))
         except Exception as e:
             db.session.rollback()
