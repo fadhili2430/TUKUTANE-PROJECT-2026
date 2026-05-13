@@ -40,7 +40,7 @@ class MainActivity : AppCompatActivity() {
 
     private val TARGET_URL = "https://tukutaneproject.pythonanywhere.com/"
     private val VERSION_URL = "https://tukutaneproject.pythonanywhere.com/api/version"
-    private val CURRENT_VERSION = "1.0.11"
+    private val CURRENT_VERSION = "1.0.12"
     private var updateDialogShown = false
     private var tokenSyncDone = false
 
