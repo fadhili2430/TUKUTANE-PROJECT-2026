@@ -50,6 +50,18 @@ jobs:
       - name: Set up Android SDK
         uses: android-actions/setup-android@v3
 
+      - name: Inject google-services.json
+        env:
+          GOOGLE_SERVICES_JSON: ${{ secrets.GOOGLE_SERVICES_JSON }}
+        run: |
+          if [ -n "$GOOGLE_SERVICES_JSON" ]; then
+            echo "$GOOGLE_SERVICES_JSON" > android/app/google-services.json
+            echo "google-services.json injected from secret"
+          else
+            echo "WARNING: GOOGLE_SERVICES_JSON secret not set — FCM push notifications will not work"
+            echo "See README for Firebase setup instructions"
+          fi
+
       - name: Ensure gradle-wrapper.jar exists
         working-directory: android
         run: |
