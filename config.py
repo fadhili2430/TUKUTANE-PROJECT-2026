@@ -1,32 +1,19 @@
 import os
 
+_db_url = os.environ.get('DATABASE_URL') or 'sqlite:///site.db'
+if _db_url.startswith('postgres://'):
+    _db_url = _db_url.replace('postgres://', 'postgresql://', 1)
+
 class Config:
     SECRET_KEY = os.environ.get('SECRET_KEY') or 'tung-tung-tung-sahur'
+    SQLALCHEMY_DATABASE_URI = _db_url
     SQLALCHEMY_TRACK_MODIFICATIONS = False
 
-    @staticmethod
-    def _build_db_uri():
-        uri = os.environ.get('DATABASE_URL') or 'sqlite:///site.db'
-        if uri.startswith('postgres://'):
-            uri = uri.replace('postgres://', 'postgresql://', 1)
-        return uri
-
-    SQLALCHEMY_DATABASE_URI = _build_db_uri.__func__()
-
-    @staticmethod
-    def _build_engine_options():
-        uri = os.environ.get('DATABASE_URL') or ''
-        if uri and 'sqlite' not in uri:
-            return {
-                'pool_size': 10,
-                'pool_recycle': 3600,
-                'pool_pre_ping': True,
-            }
-        return {
-            'connect_args': {'timeout': 15}
-        }
-
-    SQLALCHEMY_ENGINE_OPTIONS = _build_engine_options.__func__()
+    SQLALCHEMY_ENGINE_OPTIONS = (
+        {'connect_args': {'timeout': 15}}
+        if 'sqlite' in _db_url
+        else {'pool_size': 10, 'pool_recycle': 3600, 'pool_pre_ping': True}
+    )
 
     PERMANENT_SESSION_LIFETIME = 3600
     SESSION_COOKIE_SECURE = False
