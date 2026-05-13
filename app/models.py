@@ -31,6 +31,7 @@ class User(db.Model, UserMixin):
     campus_area_id = db.Column(db.Integer, db.ForeignKey('campus_area.id'), nullable=False)
     reset_token = db.Column(db.String(100), nullable=True)
     reset_token_expiry = db.Column(db.DateTime, nullable=True)
+    fcm_token = db.Column(db.String(256), nullable=True)
 
     campus_area = db.relationship('CampusArea', backref='users')
     activities = db.relationship('Activity', secondary=user_activities, backref=db.backref('users', lazy='dynamic'))
@@ -76,7 +77,7 @@ class Event(db.Model):
     rsvps = db.relationship('RSVP', backref='event', lazy=True, cascade="all, delete-orphan")
 
     def is_full(self):
-        return len([rsvp for rsvp in self.rsvps if rsvp.status == 'confirmed']) >= self.max_attendees
+        return len([r for r in self.rsvps if r.status == 'confirmed']) >= self.max_attendees
 
 class RSVP(db.Model):
     id = db.Column(db.Integer, primary_key=True)
