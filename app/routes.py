@@ -2,9 +2,13 @@ from flask import Blueprint, render_template, request, redirect, flash, url_for,
 from flask_login import login_user, logout_user, login_required, current_user
 from .models import User, Event, RSVP, Activity, CampusArea
 from .forms import SignupForm, LoginForm, EventForm, ProfileForm, ForgotPasswordForm, ResetPasswordForm
-from app import db, mail
-from flask_mail import Message
+from app import db, mail, MAIL_ENABLED
 from datetime import datetime
+
+try:
+    from flask_mail import Message
+except ImportError:
+    Message = None
 import logging
 import os
 import hmac
@@ -203,13 +207,14 @@ def forgot_password():
             try:
                 token = user.generate_reset_token()
                 db.session.commit()
-                reset_url = url_for('main.reset_password', token=token, _external=True)
-                msg = Message(
-                    subject="Tukutane — Reset Your Password",
-                    recipients=[user.email],
-                    html=render_template("email/reset_password.html", user=user, reset_url=reset_url)
-                )
-                mail.send(msg)
+                if MAIL_ENABLED and mail and Message:
+                    reset_url = url_for('main.reset_password', token=token, _external=True)
+                    msg = Message(
+                        subject="Tukutane — Reset Your Password",
+                        recipients=[user.email],
+                        html=render_template("email/reset_password.html", user=user, reset_url=reset_url)
+                    )
+                    mail.send(msg)
             except Exception as e:
                 logger.error(f"Password reset email error: {str(e)}")
         flash("If that email is registered, a reset link has been sent. Check your inbox.")
@@ -333,31 +338,33 @@ def _send_rsvp_notifications(event, attendee):
     event_url = f"https://tukutaneproject.pythonanywhere.com/dashboard"
 
     # ── Email to attendee ──────────────────────────────────────────────────
-    try:
-        msg_attendee = Message(
-            subject=f"Tukutane — You're going to {event.title}!",
-            recipients=[attendee.email],
-            html=render_template("email/rsvp_confirmation.html", event=event, user=attendee)
-        )
-        mail.send(msg_attendee)
-    except Exception as e:
-        logger.error(f"RSVP confirmation email failed: {e}")
+    if MAIL_ENABLED and mail and Message:
+        try:
+            msg_attendee = Message(
+                subject=f"Tukutane — You're going to {event.title}!",
+                recipients=[attendee.email],
+                html=render_template("email/rsvp_confirmation.html", event=event, user=attendee)
+            )
+            mail.send(msg_attendee)
+        except Exception as e:
+            logger.error(f"RSVP confirmation email failed: {e}")
 
     # ── Email + Push notification to organiser ─────────────────────────────
     try:
         organiser = User.query.get(event.organiser_id)
         if organiser and organiser.email != attendee.email:
             # Email
-            try:
-                msg_organiser = Message(
-                    subject=f"Tukutane — New RSVP for {event.title}",
-                    recipients=[organiser.email],
-                    html=render_template("email/rsvp_organiser_notify.html",
-                                         event=event, attendee=attendee, organiser=organiser)
-                )
-                mail.send(msg_organiser)
-            except Exception as e:
-                logger.error(f"RSVP organiser email failed: {e}")
+            if MAIL_ENABLED and mail and Message:
+                try:
+                    msg_organiser = Message(
+                        subject=f"Tukutane — New RSVP for {event.title}",
+                        recipients=[organiser.email],
+                        html=render_template("email/rsvp_organiser_notify.html",
+                                             event=event, attendee=attendee, organiser=organiser)
+                    )
+                    mail.send(msg_organiser)
+                except Exception as e:
+                    logger.error(f"RSVP organiser email failed: {e}")
 
             # Push notification (FCM)
             if organiser.fcm_token:
