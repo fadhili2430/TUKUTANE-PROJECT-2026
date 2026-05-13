@@ -1,285 +1,137 @@
 package com.tukutane.app
 
-import android.Manifest
-import android.annotation.SuppressLint
-import android.app.AlarmManager
-import android.app.NotificationChannel
-import android.app.NotificationManager
-import android.app.PendingIntent
+import android.app.AlertDialog
 import android.content.ActivityNotFoundException
-import android.content.Context
 import android.content.Intent
-import android.content.pm.PackageManager
 import android.net.ConnectivityManager
-import android.net.Network
 import android.net.NetworkCapabilities
-import android.net.NetworkRequest
 import android.net.Uri
-import android.os.Build
 import android.os.Bundle
 import android.view.View
 import android.webkit.*
 import android.widget.Button
-import android.widget.LinearLayout
-import android.widget.ProgressBar
+import android.widget.TextView
 import androidx.activity.OnBackPressedCallback
-import androidx.activity.result.contract.ActivityResultContracts
 import androidx.appcompat.app.AppCompatActivity
-import androidx.core.app.NotificationCompat
-import androidx.core.content.ContextCompat
 import androidx.swiperefreshlayout.widget.SwipeRefreshLayout
-import java.util.*
+import org.json.JSONObject
+import java.net.HttpURLConnection
+import java.net.URL
 
 class MainActivity : AppCompatActivity() {
 
     private lateinit var webView: WebView
-    private lateinit var swipeRefreshLayout: SwipeRefreshLayout
-    private lateinit var progressBar: ProgressBar
-    private lateinit var offlineLayout: LinearLayout
+    private lateinit var swipeRefresh: SwipeRefreshLayout
+    private lateinit var offlineLayout: View
     private lateinit var retryButton: Button
+    private lateinit var offlineText: TextView
 
     private val TARGET_URL = "https://tukutaneproject.pythonanywhere.com/"
-    private var isPageLoaded = false
+    private val VERSION_URL = "https://tukutaneproject.pythonanywhere.com/api/version"
+    private val CURRENT_VERSION = "1.0.0"
+    private var updateDialogShown = false
 
-    companion object {
-        const val CHANNEL_ID          = "tukutane_event_reminders"
-        const val CHANNEL_NAME        = "Event Reminders"
-        const val CHANNEL_DESC        = "Notifications for events you have RSVP'd to"
-        const val BADGE_CHANNEL_ID    = "tukutane_badge"
-        const val BADGE_NOTIFICATION_ID = 999999
-    }
-
-    private val requestNotificationPermission =
-        registerForActivityResult(ActivityResultContracts.RequestPermission()) { }
-
-    private val requestLocationPermission =
-        registerForActivityResult(ActivityResultContracts.RequestMultiplePermissions()) { }
-
-    private val networkCallback = object : ConnectivityManager.NetworkCallback() {
-        override fun onAvailable(network: Network) {
-            runOnUiThread {
-                if (!isPageLoaded) {
-                    showWebView()
-                    webView.reload()
-                }
-            }
-        }
-
-        override fun onLost(network: Network) {
-            runOnUiThread {
-                if (!isPageLoaded) {
-                    showOfflineScreen()
-                }
-            }
-        }
-    }
-
-    @SuppressLint("SetJavaScriptEnabled")
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_main)
 
-        webView            = findViewById(R.id.webView)
-        swipeRefreshLayout = findViewById(R.id.swipeRefreshLayout)
-        progressBar        = findViewById(R.id.progressBar)
-        offlineLayout      = findViewById(R.id.offlineLayout)
-        retryButton        = findViewById(R.id.retryButton)
+        webView = findViewById(R.id.webView)
+        swipeRefresh = findViewById(R.id.swipeRefresh)
+        offlineLayout = findViewById(R.id.offlineLayout)
+        retryButton = findViewById(R.id.retryButton)
+        offlineText = findViewById(R.id.offlineText)
 
-        createNotificationChannels()
-        requestPermissions()
         setupWebView()
         setupSwipeRefresh()
-        setupNetworkMonitoring()
         setupBackNavigation()
 
+        if (isOnline()) {
+            webView.loadUrl(TARGET_URL)
+            checkForUpdate()
+        } else {
+            showOffline()
+        }
+
         retryButton.setOnClickListener {
-            if (isConnected()) {
+            if (isOnline()) {
                 showWebView()
                 webView.loadUrl(TARGET_URL)
+            } else {
+                offlineText.text = "Still no connection. Please check your internet."
             }
-        }
-
-        if (isConnected()) {
-            webView.loadUrl(TARGET_URL)
-        } else {
-            showOfflineScreen()
         }
     }
 
-    private fun createNotificationChannels() {
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
-            val nm = getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager
-
-            // High-priority channel for event reminder pop-ups
-            val reminderChannel = NotificationChannel(
-                CHANNEL_ID, CHANNEL_NAME, NotificationManager.IMPORTANCE_HIGH
-            ).apply {
-                description = CHANNEL_DESC
-                enableVibration(true)
-                enableLights(true)
-            }
-            nm.createNotificationChannel(reminderChannel)
-
-            // Silent channel used only to drive the launcher icon badge count
-            val badgeChannel = NotificationChannel(
-                BADGE_CHANNEL_ID, "Upcoming Events", NotificationManager.IMPORTANCE_MIN
-            ).apply {
-                description = "Shows upcoming RSVP count on the app icon"
-                setShowBadge(true)
-                setSound(null, null)
-                enableVibration(false)
-                enableLights(false)
-            }
-            nm.createNotificationChannel(badgeChannel)
-        }
-    }
-
-    private fun requestPermissions() {
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
-            if (ContextCompat.checkSelfPermission(
-                    this, Manifest.permission.POST_NOTIFICATIONS
-                ) != PackageManager.PERMISSION_GRANTED
-            ) {
-                requestNotificationPermission.launch(Manifest.permission.POST_NOTIFICATIONS)
-            }
-        }
-
-        val fineGranted = ContextCompat.checkSelfPermission(
-            this, Manifest.permission.ACCESS_FINE_LOCATION
-        ) == PackageManager.PERMISSION_GRANTED
-        val coarseGranted = ContextCompat.checkSelfPermission(
-            this, Manifest.permission.ACCESS_COARSE_LOCATION
-        ) == PackageManager.PERMISSION_GRANTED
-
-        if (!fineGranted || !coarseGranted) {
-            requestLocationPermission.launch(
-                arrayOf(
-                    Manifest.permission.ACCESS_FINE_LOCATION,
-                    Manifest.permission.ACCESS_COARSE_LOCATION
-                )
-            )
-        }
-    }
-
-    @SuppressLint("SetJavaScriptEnabled")
     private fun setupWebView() {
-        val settings = webView.settings
-        settings.javaScriptEnabled                  = true
-        settings.domStorageEnabled                  = true
-        settings.loadWithOverviewMode               = true
-        settings.useWideViewPort                    = true
-        settings.setSupportZoom(false)
-        settings.builtInZoomControls                = false
-        settings.displayZoomControls                = false
-        settings.cacheMode                          = WebSettings.LOAD_DEFAULT
-        settings.mixedContentMode                   = WebSettings.MIXED_CONTENT_COMPATIBILITY_MODE
-        settings.mediaPlaybackRequiresUserGesture   = false
-        settings.allowFileAccess                    = false
-        settings.loadsImagesAutomatically           = true
-        settings.javaScriptCanOpenWindowsAutomatically = false
-        settings.setGeolocationEnabled(true)
-
-        webView.setBackgroundColor(ContextCompat.getColor(this, R.color.background))
-        webView.addJavascriptInterface(TukutaneNotifier(this), "TukutaneAndroid")
+        webView.settings.apply {
+            javaScriptEnabled = true
+            domStorageEnabled = true
+            loadWithOverviewMode = true
+            useWideViewPort = true
+            setSupportZoom(false)
+            builtInZoomControls = false
+            displayZoomControls = false
+            mixedContentMode = WebSettings.MIXED_CONTENT_COMPATIBILITY_MODE
+            cacheMode = WebSettings.LOAD_DEFAULT
+            userAgentString = userAgentString + " TukutaneApp/1.0"
+        }
 
         webView.webViewClient = object : WebViewClient() {
-
             override fun onPageStarted(view: WebView?, url: String?, favicon: android.graphics.Bitmap?) {
                 super.onPageStarted(view, url, favicon)
-                progressBar.visibility = View.VISIBLE
-                progressBar.progress   = 0
+                swipeRefresh.isRefreshing = true
             }
 
             override fun onPageFinished(view: WebView?, url: String?) {
                 super.onPageFinished(view, url)
-                progressBar.visibility     = View.GONE
-                swipeRefreshLayout.isRefreshing = false
-                isPageLoaded               = true
+                swipeRefresh.isRefreshing = false
             }
 
-            override fun onReceivedError(
-                view: WebView?,
-                request: WebResourceRequest?,
-                error: WebResourceError?
-            ) {
+            override fun onReceivedError(view: WebView?, request: WebResourceRequest?, error: WebResourceError?) {
                 super.onReceivedError(view, request, error)
                 if (request?.isForMainFrame == true) {
-                    isPageLoaded                    = false
-                    progressBar.visibility          = View.GONE
-                    swipeRefreshLayout.isRefreshing = false
-                    showOfflineScreen()
+                    swipeRefresh.isRefreshing = false
+                    if (!isOnline()) showOffline()
                 }
             }
 
-            @SuppressLint("WebViewClientOnReceivedSslError")
-            override fun onReceivedSslError(
-                view: WebView?,
-                handler: SslErrorHandler?,
-                error: android.net.http.SslError?
-            ) {
-                handler?.proceed()
+            override fun onReceivedSslError(view: WebView?, handler: SslErrorHandler?, error: SslError?) {
+                handler?.cancel()
             }
 
-            override fun shouldOverrideUrlLoading(
-                view: WebView?,
-                request: WebResourceRequest?
-            ): Boolean {
+            override fun shouldOverrideUrlLoading(view: WebView?, request: WebResourceRequest?): Boolean {
                 val url = request?.url?.toString() ?: return false
-                return if (url.startsWith("https://tukutaneproject.pythonanywhere.com") ||
-                    url.startsWith("http://tukutaneproject.pythonanywhere.com")
-                ) {
-                    false
+                return if (url.startsWith("http://") || url.startsWith("https://")) {
+                    false // load inside WebView
                 } else {
                     try {
                         startActivity(Intent(Intent.ACTION_VIEW, Uri.parse(url)))
-                    } catch (e: ActivityNotFoundException) { }
+                    } catch (e: ActivityNotFoundException) {
+                        // ignore
+                    }
                     true
                 }
             }
         }
 
         webView.webChromeClient = object : WebChromeClient() {
-            override fun onProgressChanged(view: WebView?, newProgress: Int) {
-                super.onProgressChanged(view, newProgress)
-                progressBar.progress = newProgress
-                if (newProgress == 100) progressBar.visibility = View.GONE
-            }
-
-            override fun onGeolocationPermissionsShowPrompt(
-                origin: String?,
-                callback: GeolocationPermissions.Callback?
-            ) {
-                val fineGranted = ContextCompat.checkSelfPermission(
-                    this@MainActivity, Manifest.permission.ACCESS_FINE_LOCATION
-                ) == PackageManager.PERMISSION_GRANTED
-                val coarseGranted = ContextCompat.checkSelfPermission(
-                    this@MainActivity, Manifest.permission.ACCESS_COARSE_LOCATION
-                ) == PackageManager.PERMISSION_GRANTED
-
-                if (fineGranted || coarseGranted) {
-                    callback?.invoke(origin, true, false)
-                } else {
-                    requestLocationPermission.launch(
-                        arrayOf(
-                            Manifest.permission.ACCESS_FINE_LOCATION,
-                            Manifest.permission.ACCESS_COARSE_LOCATION
-                        )
-                    )
-                    callback?.invoke(origin, false, false)
-                }
+            override fun onGeolocationPermissionsShowPrompt(origin: String?, callback: GeolocationPermissions.Callback?) {
+                callback?.invoke(origin, true, false)
             }
         }
     }
 
     private fun setupSwipeRefresh() {
-        swipeRefreshLayout.setColorSchemeResources(R.color.colorPrimary)
-        swipeRefreshLayout.setOnRefreshListener {
-            if (isConnected()) {
-                isPageLoaded = false
+        swipeRefresh.setColorSchemeColors(
+            resources.getColor(R.color.primary, theme)
+        )
+        swipeRefresh.setOnRefreshListener {
+            if (isOnline()) {
+                showWebView()
                 webView.reload()
             } else {
-                swipeRefreshLayout.isRefreshing = false
-                showOfflineScreen()
+                swipeRefresh.isRefreshing = false
+                showOffline()
             }
         }
     }
@@ -290,170 +142,85 @@ class MainActivity : AppCompatActivity() {
                 if (webView.canGoBack()) {
                     webView.goBack()
                 } else {
-                    isEnabled = false
-                    onBackPressedDispatcher.onBackPressed()
+                    finish()
                 }
             }
         })
     }
 
-    private fun setupNetworkMonitoring() {
-        val cm = getSystemService(Context.CONNECTIVITY_SERVICE) as ConnectivityManager
-        val request = NetworkRequest.Builder()
-            .addCapability(NetworkCapabilities.NET_CAPABILITY_INTERNET)
-            .build()
-        cm.registerNetworkCallback(request, networkCallback)
+    // ── Auto-update check ────────────────────────────────────────────────────
+    private fun checkForUpdate() {
+        if (updateDialogShown) return
+        Thread {
+            try {
+                val conn = URL(VERSION_URL).openConnection() as HttpURLConnection
+                conn.connectTimeout = 5000
+                conn.readTimeout = 5000
+                conn.requestMethod = "GET"
+                if (conn.responseCode == 200) {
+                    val body = conn.inputStream.bufferedReader().readText()
+                    val json = JSONObject(body)
+                    val latestVersion = json.getString("version")
+                    val downloadUrl = json.optString("download_url", "")
+                    if (isNewerVersion(latestVersion, CURRENT_VERSION)) {
+                        runOnUiThread {
+                            showUpdateDialog(latestVersion, downloadUrl)
+                        }
+                    }
+                }
+                conn.disconnect()
+            } catch (e: Exception) {
+                // Silently ignore — update check is best-effort
+            }
+        }.start()
     }
 
-    private fun isConnected(): Boolean {
-        val cm = getSystemService(Context.CONNECTIVITY_SERVICE) as ConnectivityManager
-        val network = cm.activeNetwork ?: return false
-        val caps    = cm.getNetworkCapabilities(network) ?: return false
+    private fun isNewerVersion(latest: String, current: String): Boolean {
+        return try {
+            val lParts = latest.split(".").map { it.toInt() }
+            val cParts = current.split(".").map { it.toInt() }
+            for (i in 0 until maxOf(lParts.size, cParts.size)) {
+                val l = lParts.getOrElse(i) { 0 }
+                val c = cParts.getOrElse(i) { 0 }
+                if (l > c) return true
+                if (l < c) return false
+            }
+            false
+        } catch (e: Exception) { false }
+    }
+
+    private fun showUpdateDialog(newVersion: String, downloadUrl: String) {
+        if (updateDialogShown || isFinishing) return
+        updateDialogShown = true
+        AlertDialog.Builder(this)
+            .setTitle("Update Available 🎉")
+            .setMessage("A new version of Tukutane (v$newVersion) is available.\n\nUpdate now to get the latest features and improvements.")
+            .setPositiveButton("Update Now") { _, _ ->
+                val url = downloadUrl.ifEmpty { "https://github.com/fadhili2430/TUKUTANE-PROJECT-2026/releases/latest" }
+                try {
+                    startActivity(Intent(Intent.ACTION_VIEW, Uri.parse(url)))
+                } catch (e: ActivityNotFoundException) { }
+            }
+            .setNegativeButton("Later", null)
+            .setCancelable(true)
+            .show()
+    }
+
+    // ── Online/offline helpers ───────────────────────────────────────────────
+    private fun isOnline(): Boolean {
+        val cm = getSystemService(CONNECTIVITY_SERVICE) as ConnectivityManager
+        val net = cm.activeNetwork ?: return false
+        val caps = cm.getNetworkCapabilities(net) ?: return false
         return caps.hasCapability(NetworkCapabilities.NET_CAPABILITY_INTERNET)
     }
 
+    private fun showOffline() {
+        offlineLayout.visibility = View.VISIBLE
+        swipeRefresh.visibility = View.GONE
+    }
+
     private fun showWebView() {
-        offlineLayout.visibility      = View.GONE
-        swipeRefreshLayout.visibility = View.VISIBLE
-    }
-
-    private fun showOfflineScreen() {
-        swipeRefreshLayout.visibility = View.GONE
-        offlineLayout.visibility      = View.VISIBLE
-    }
-
-    override fun onDestroy() {
-        try {
-            val cm = getSystemService(Context.CONNECTIVITY_SERVICE) as ConnectivityManager
-            cm.unregisterNetworkCallback(networkCallback)
-        } catch (e: Exception) { }
-        webView.stopLoading()
-        webView.destroy()
-        super.onDestroy()
-    }
-
-    // JavaScript bridge — called by web pages to interact with native Android features
-    inner class TukutaneNotifier(private val context: Context) {
-
-        /**
-         * Schedule a reminder notification 1 hour before an RSVP'd event.
-         */
-        @JavascriptInterface
-        fun scheduleEventReminder(eventId: Int, title: String, dateStr: String, timeStr: String) {
-            try {
-                val timeParts = timeStr.split(":")
-                val hour   = timeParts.getOrNull(0)?.toIntOrNull() ?: 0
-                val minute = timeParts.getOrNull(1)?.toIntOrNull() ?: 0
-
-                val dateParts = dateStr.split("-")
-                val year  = dateParts.getOrNull(0)?.toIntOrNull() ?: return
-                val month = dateParts.getOrNull(1)?.toIntOrNull() ?: return
-                val day   = dateParts.getOrNull(2)?.toIntOrNull() ?: return
-
-                val eventCal = Calendar.getInstance().apply {
-                    set(year, month - 1, day, hour, minute, 0)
-                    set(Calendar.MILLISECOND, 0)
-                    add(Calendar.HOUR_OF_DAY, -1)
-                }
-
-                val triggerAt = eventCal.timeInMillis
-                if (triggerAt <= System.currentTimeMillis()) return
-
-                val intent = Intent(context, EventReminderReceiver::class.java).apply {
-                    putExtra("eventId", eventId)
-                    putExtra("title",   title)
-                    putExtra("dateStr", dateStr)
-                    putExtra("timeStr", timeStr)
-                }
-
-                val pendingIntent = PendingIntent.getBroadcast(
-                    context, eventId, intent,
-                    PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE
-                )
-
-                val alarmManager = context.getSystemService(Context.ALARM_SERVICE) as AlarmManager
-
-                if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
-                    if (alarmManager.canScheduleExactAlarms()) {
-                        alarmManager.setExactAndAllowWhileIdle(
-                            AlarmManager.RTC_WAKEUP, triggerAt, pendingIntent
-                        )
-                    } else {
-                        alarmManager.set(AlarmManager.RTC_WAKEUP, triggerAt, pendingIntent)
-                    }
-                } else {
-                    alarmManager.setExactAndAllowWhileIdle(
-                        AlarmManager.RTC_WAKEUP, triggerAt, pendingIntent
-                    )
-                }
-            } catch (e: Exception) { }
-        }
-
-        /**
-         * Cancel a previously scheduled reminder.
-         */
-        @JavascriptInterface
-        fun cancelEventReminder(eventId: Int) {
-            try {
-                val intent = Intent(context, EventReminderReceiver::class.java)
-                val pendingIntent = PendingIntent.getBroadcast(
-                    context, eventId, intent,
-                    PendingIntent.FLAG_NO_CREATE or PendingIntent.FLAG_IMMUTABLE
-                )
-                pendingIntent?.let {
-                    val alarmManager = context.getSystemService(Context.ALARM_SERVICE) as AlarmManager
-                    alarmManager.cancel(it)
-                    it.cancel()
-                }
-            } catch (e: Exception) { }
-        }
-
-        /**
-         * Update the launcher icon badge with the number of upcoming RSVP'd events.
-         * Called by the RSVPs page every time it loads.
-         * Uses a silent, ongoing notification so the count appears on the icon
-         * without making a sound or showing a heads-up banner.
-         */
-        @JavascriptInterface
-        fun setBadgeCount(count: Int) {
-            try {
-                val nm = context.getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager
-
-                if (count <= 0) {
-                    nm.cancel(BADGE_NOTIFICATION_ID)
-                    return
-                }
-
-                val label = if (count == 1) "1 upcoming event" else "$count upcoming events"
-
-                val tapIntent = Intent(context, SplashActivity::class.java).apply {
-                    flags = Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TASK
-                }
-                val tapPendingIntent = PendingIntent.getActivity(
-                    context, 0, tapIntent,
-                    PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE
-                )
-
-                val notification = NotificationCompat.Builder(context, BADGE_CHANNEL_ID)
-                    .setSmallIcon(R.drawable.ic_tukutane_logo)
-                    .setContentTitle(label)
-                    .setContentText("Tap to view your RSVPs")
-                    .setNumber(count)
-                    .setPriority(NotificationCompat.PRIORITY_MIN)
-                    .setOngoing(true)
-                    .setVisibility(NotificationCompat.VISIBILITY_SECRET)
-                    .setSilent(true)
-                    .setContentIntent(tapPendingIntent)
-                    .build()
-
-                nm.notify(BADGE_NOTIFICATION_ID, notification)
-            } catch (e: Exception) { }
-        }
-
-        /**
-         * Returns true so web pages can detect they are running inside the Android app.
-         */
-        @JavascriptInterface
-        fun isNativeApp(): Boolean = true
+        offlineLayout.visibility = View.GONE
+        swipeRefresh.visibility = View.VISIBLE
     }
 }
