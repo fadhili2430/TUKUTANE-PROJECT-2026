@@ -53,6 +53,7 @@
             android:layout_marginBottom="12dp" />
 
         <TextView
+            android:id="@+id/offlineText"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:text="Please check your connection and try again."
