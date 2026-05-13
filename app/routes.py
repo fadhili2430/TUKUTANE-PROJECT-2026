@@ -16,6 +16,50 @@ logger = logging.getLogger(__name__)
 
 main = Blueprint('main', __name__)
 
+# ─── Firebase Admin SDK (lazy-init so app still boots without credentials) ───
+_firebase_app = None
+
+def _get_firebase():
+    global _firebase_app
+    if _firebase_app is not None:
+        return _firebase_app
+    sa_json = os.environ.get('FIREBASE_SERVICE_ACCOUNT', '')
+    if not sa_json:
+        return None
+    try:
+        import firebase_admin
+        from firebase_admin import credentials
+        import json
+        cred = credentials.Certificate(json.loads(sa_json))
+        _firebase_app = firebase_admin.initialize_app(cred)
+        return _firebase_app
+    except Exception as e:
+        logger.error(f"Firebase init error: {e}")
+        return None
+
+def _send_push(fcm_token: str, title: str, body: str, url: str = ''):
+    if not fcm_token:
+        return
+    try:
+        _get_firebase()
+        from firebase_admin import messaging
+        msg = messaging.Message(
+            notification=messaging.Notification(title=title, body=body),
+            data={'url': url} if url else {},
+            token=fcm_token,
+            android=messaging.AndroidConfig(
+                priority='high',
+                notification=messaging.AndroidNotification(
+                    channel_id='tukutane_events',
+                    sound='default',
+                )
+            )
+        )
+        messaging.send(msg)
+        logger.info(f"Push notification sent to token ending ...{fcm_token[-6:]}")
+    except Exception as e:
+        logger.error(f"Push notification failed: {e}")
+
 # ─── App version endpoint (used by Android for auto-update check) ────────────
 APP_VERSION = '1.0.0'
 APK_DOWNLOAD_URL = 'https://github.com/fadhili2430/TUKUTANE-PROJECT-2026/releases/latest'
@@ -23,6 +67,22 @@ APK_DOWNLOAD_URL = 'https://github.com/fadhili2430/TUKUTANE-PROJECT-2026/release
 @main.route('/api/version')
 def app_version():
     return jsonify({'version': APP_VERSION, 'download_url': APK_DOWNLOAD_URL})
+
+# ─── FCM token registration (called by Android app when user is logged in) ───
+@main.route('/api/fcm-token', methods=['POST'])
+@login_required
+def register_fcm_token():
+    token = request.form.get('token', '').strip()
+    if not token:
+        return jsonify({'error': 'missing token'}), 400
+    try:
+        current_user.fcm_token = token
+        db.session.commit()
+        return jsonify({'status': 'ok'}), 200
+    except Exception as e:
+        db.session.rollback()
+        logger.error(f"FCM token save error: {e}")
+        return jsonify({'error': 'server error'}), 500
 
 # ─── Auto-deploy webhook (called by GitHub on every push) ────────────────────
 @main.route('/webhook/deploy', methods=['POST'])
@@ -39,13 +99,10 @@ def deploy_webhook():
             logger.warning("Deploy webhook: invalid signature")
             return jsonify({'error': 'Unauthorized'}), 401
 
-    # Project root is two levels up from this file (app/routes.py -> app/ -> root)
     project_root = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
     python_exe = sys.executable
-
     results = {}
 
-    # 1. Pull latest code
     try:
         r = subprocess.run(
             ['git', 'pull', 'origin', 'master'],
@@ -55,7 +112,6 @@ def deploy_webhook():
     except Exception as e:
         results['git_pull'] = f'error: {e}'
 
-    # 2. Install any new dependencies
     try:
         req_file = os.path.join(project_root, 'requirements.txt')
         r = subprocess.run(
@@ -66,7 +122,6 @@ def deploy_webhook():
     except Exception as e:
         results['pip_install'] = f'error: {e}'
 
-    # 3. Run database migrations
     try:
         r = subprocess.run(
             [python_exe, '-m', 'flask', 'db', 'upgrade'],
@@ -77,7 +132,6 @@ def deploy_webhook():
     except Exception as e:
         results['db_upgrade'] = f'error: {e}'
 
-    # 4. Touch wsgi.py — PythonAnywhere watches this file and reloads the app
     try:
         wsgi_path = os.path.join(project_root, 'wsgi.py')
         os.utime(wsgi_path, None)
@@ -276,6 +330,9 @@ def rsvp(event_id):
     return redirect(url_for("main.dashboard"))
 
 def _send_rsvp_notifications(event, attendee):
+    event_url = f"https://tukutaneproject.pythonanywhere.com/dashboard"
+
+    # ── Email to attendee ──────────────────────────────────────────────────
     try:
         msg_attendee = Message(
             subject=f"Tukutane — You're going to {event.title}!",
@@ -285,17 +342,42 @@ def _send_rsvp_notifications(event, attendee):
         mail.send(msg_attendee)
     except Exception as e:
         logger.error(f"RSVP confirmation email failed: {e}")
+
+    # ── Email + Push notification to organiser ─────────────────────────────
     try:
         organiser = User.query.get(event.organiser_id)
         if organiser and organiser.email != attendee.email:
-            msg_organiser = Message(
-                subject=f"Tukutane — New RSVP for {event.title}",
-                recipients=[organiser.email],
-                html=render_template("email/rsvp_organiser_notify.html", event=event, attendee=attendee, organiser=organiser)
+            # Email
+            try:
+                msg_organiser = Message(
+                    subject=f"Tukutane — New RSVP for {event.title}",
+                    recipients=[organiser.email],
+                    html=render_template("email/rsvp_organiser_notify.html",
+                                         event=event, attendee=attendee, organiser=organiser)
+                )
+                mail.send(msg_organiser)
+            except Exception as e:
+                logger.error(f"RSVP organiser email failed: {e}")
+
+            # Push notification (FCM)
+            if organiser.fcm_token:
+                _send_push(
+                    fcm_token=organiser.fcm_token,
+                    title=f"New RSVP — {event.title}",
+                    body=f"{attendee.name} just joined your event!",
+                    url=event_url
+                )
+
+        # ── Push notification to attendee too (confirmation) ───────────────
+        if attendee.fcm_token:
+            _send_push(
+                fcm_token=attendee.fcm_token,
+                title=f"You're going to {event.title}!",
+                body=f"RSVP confirmed. See you there!",
+                url=event_url
             )
-            mail.send(msg_organiser)
     except Exception as e:
-        logger.error(f"RSVP organiser notification email failed: {e}")
+        logger.error(f"RSVP notification error: {e}")
 
 # ─── Cancel RSVP ─────────────────────────────────────────────────────────────
 @main.route("/cancel_rsvp/<int:event_id>")
