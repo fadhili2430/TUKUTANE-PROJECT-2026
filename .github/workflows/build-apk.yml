@@ -59,8 +59,8 @@ jobs:
             echo "$GOOGLE_SERVICES_JSON" > android/app/google-services.json
             echo "google-services.json injected from secret"
           else
-            echo "WARNING: GOOGLE_SERVICES_JSON secret not set — FCM push notifications will not work"
-            echo "See README for Firebase setup instructions"
+            echo "WARNING: GOOGLE_SERVICES_JSON secret not set — using placeholder (FCM push notifications will not work)"
+            cp android/app/google-services.json.placeholder android/app/google-services.json
           fi
 
       - name: Ensure gradle-wrapper.jar exists
@@ -68,10 +68,19 @@ jobs:
         run: |
           if [ ! -f gradle/wrapper/gradle-wrapper.jar ]; then
             mkdir -p gradle/wrapper
+            # Download from Maven Central — stable and versioned
             curl -fsSL \
-              "https://raw.githubusercontent.com/gradle/gradle/master/gradle/wrapper/gradle-wrapper.jar" \
-              -o gradle/wrapper/gradle-wrapper.jar
+              "https://repo1.maven.org/maven2/org/gradle/gradle-wrapper/8.2/gradle-wrapper-8.2.jar" \
+              -o gradle/wrapper/gradle-wrapper.jar 2>/dev/null || \
+            # Fallback: download using the Gradle distributions site
+            curl -fsSL \
+              "https://services.gradle.org/distributions/gradle-8.2-wrapper.jar" \
+              -o gradle/wrapper/gradle-wrapper.jar 2>/dev/null || \
+            # Second fallback: use gradle wrapper task via a temp Gradle install
+            (apt-get install -y gradle -q && gradle wrapper --gradle-version=8.2 && apt-get remove -y gradle -q) || \
+            echo "WARNING: Could not download gradle-wrapper.jar"
           fi
+          ls -lh gradle/wrapper/gradle-wrapper.jar
 
       - name: Make gradlew executable
         working-directory: android
