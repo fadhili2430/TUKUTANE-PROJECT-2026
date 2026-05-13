@@ -7,6 +7,9 @@ on:
       - 'android/**'
   workflow_dispatch:
 
+permissions:
+  contents: write
+
 jobs:
   build:
     runs-on: ubuntu-latest
@@ -14,6 +17,28 @@ jobs:
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+          token: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Bump version
+        id: version
+        run: |
+          VERSION=$(cat version.txt 2>/dev/null || echo "1.0.0")
+          IFS='.' read -ra PARTS <<< "$VERSION"
+          PATCH=$(( ${PARTS[2]} + 1 ))
+          NEW="${PARTS[0]}.${PARTS[1]}.$PATCH"
+          echo "$NEW" > version.txt
+          sed -i "s/APP_VERSION = '[0-9]*\.[0-9]*\.[0-9]*'/APP_VERSION = '$NEW'/" app/routes.py
+          sed -i 's/val CURRENT_VERSION = "[0-9]*\.[0-9]*\.[0-9]*"/val CURRENT_VERSION = "'"$NEW"'"/' \
+            android/app/src/main/java/com/tukutane/app/MainActivity.kt
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git config user.name "github-actions[bot]"
+          git add version.txt app/routes.py \
+            android/app/src/main/java/com/tukutane/app/MainActivity.kt
+          git commit -m "chore: auto-bump version to $NEW [skip ci]"
+          git push
+          echo "new_version=$NEW" >> $GITHUB_OUTPUT
 
       - name: Set up JDK 17
         uses: actions/setup-java@v4
@@ -29,14 +54,10 @@ jobs:
         working-directory: android
         run: |
           if [ ! -f gradle/wrapper/gradle-wrapper.jar ]; then
-            echo "gradle-wrapper.jar missing — downloading..."
             mkdir -p gradle/wrapper
             curl -fsSL \
               "https://raw.githubusercontent.com/gradle/gradle/master/gradle/wrapper/gradle-wrapper.jar" \
               -o gradle/wrapper/gradle-wrapper.jar
-            echo "Downloaded: $(wc -c < gradle/wrapper/gradle-wrapper.jar) bytes"
-          else
-            echo "gradle-wrapper.jar present: $(wc -c < gradle/wrapper/gradle-wrapper.jar) bytes"
           fi
 
       - name: Make gradlew executable
@@ -59,33 +80,44 @@ jobs:
         working-directory: android
         run: ./gradlew assembleDebug --no-daemon
 
-      - name: Upload debug APK
+      - name: Upload APK artifact
         uses: actions/upload-artifact@v4
         with:
-          name: tukutane-debug
+          name: tukutane-v${{ steps.version.outputs.new_version }}-debug
           path: android/app/build/outputs/apk/debug/app-debug.apk
           retention-days: 30
 
-      - name: Build and sign release APK
+      - name: Build release APK
         working-directory: android
         env:
           KEYSTORE_B64: ${{ secrets.KEYSTORE_BASE64 }}
-          KEYSTORE_FILE: keystore.jks
-          KEYSTORE_PASSWORD: ${{ secrets.KEYSTORE_PASSWORD }}
-          KEY_ALIAS: ${{ secrets.KEY_ALIAS }}
-          KEY_PASSWORD: ${{ secrets.KEY_PASSWORD }}
         run: |
           if [ -n "$KEYSTORE_B64" ]; then
             echo "$KEYSTORE_B64" | base64 --decode > app/keystore.jks
             ./gradlew assembleRelease --no-daemon
           else
-            echo "No keystore secret configured — skipping release build."
+            echo "No keystore — skipping release build."
           fi
 
-      - name: Upload release APK
+      - name: Upload release APK artifact
         uses: actions/upload-artifact@v4
         if: hashFiles('android/app/build/outputs/apk/release/app-release.apk') != ''
         with:
-          name: tukutane-release
+          name: tukutane-v${{ steps.version.outputs.new_version }}-release
           path: android/app/build/outputs/apk/release/app-release.apk
           retention-days: 30
+
+      - name: Create GitHub Release
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: v${{ steps.version.outputs.new_version }}
+          name: "Tukutane v${{ steps.version.outputs.new_version }}"
+          body: |
+            ## Tukutane v${{ steps.version.outputs.new_version }}
+
+            Auto-built by GitHub Actions.
+
+            **Install:** Download the APK below and install directly over your existing app — no uninstall needed.
+          files: android/app/build/outputs/apk/debug/app-debug.apk
+          draft: false
+          prerelease: false
