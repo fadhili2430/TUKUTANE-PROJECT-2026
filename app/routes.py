@@ -1,19 +1,31 @@
-from flask import Blueprint, render_template, request, redirect, flash, url_for
+from flask import Blueprint, render_template, request, redirect, flash, url_for, jsonify
 from flask_login import login_user, logout_user, login_required, current_user
 from .models import User, Event, RSVP, Activity, CampusArea
-from .forms import SignupForm, LoginForm, EventForm, ProfileForm
-from app import db
+from .forms import SignupForm, LoginForm, EventForm, ProfileForm, ForgotPasswordForm, ResetPasswordForm
+from app import db, mail
+from flask_mail import Message
 from datetime import datetime
 import logging
+import os
 
 logger = logging.getLogger(__name__)
 
 main = Blueprint('main', __name__)
 
+# ─── App version endpoint (used by Android for auto-update check) ────────────
+APP_VERSION = '1.0.0'
+APK_DOWNLOAD_URL = 'https://github.com/fadhili2430/TUKUTANE-PROJECT-2026/releases/latest'
+
+@main.route('/api/version')
+def app_version():
+    return jsonify({'version': APP_VERSION, 'download_url': APK_DOWNLOAD_URL})
+
+# ─── Home ────────────────────────────────────────────────────────────────────
 @main.route("/")
 def home():
     return render_template("home.html")
 
+# ─── Signup ──────────────────────────────────────────────────────────────────
 @main.route("/signup", methods=["GET", "POST"])
 def signup():
     form = SignupForm()
@@ -22,7 +34,6 @@ def signup():
             if User.query.filter_by(email=form.email.data).first():
                 flash("Email already registered!")
                 return redirect(url_for("main.login"))
-
             user = User(
                 name=form.name.data,
                 email=form.email.data,
@@ -44,6 +55,7 @@ def signup():
             flash("An error occurred during signup. Please try again.")
     return render_template("signup.html", form=form)
 
+# ─── Login ───────────────────────────────────────────────────────────────────
 @main.route("/login", methods=["GET", "POST"])
 def login():
     form = LoginForm()
@@ -59,6 +71,52 @@ def login():
             flash("An error occurred during login. Please try again.")
     return render_template("login.html", form=form)
 
+# ─── Forgot Password ─────────────────────────────────────────────────────────
+@main.route("/forgot-password", methods=["GET", "POST"])
+def forgot_password():
+    form = ForgotPasswordForm()
+    if form.validate_on_submit():
+        user = User.query.filter_by(email=form.email.data.lower().strip()).first()
+        # Always show success to avoid email enumeration
+        if user:
+            try:
+                token = user.generate_reset_token()
+                db.session.commit()
+                reset_url = url_for('main.reset_password', token=token, _external=True)
+                msg = Message(
+                    subject="Tukutane — Reset Your Password",
+                    recipients=[user.email],
+                    html=render_template("email/reset_password.html", user=user, reset_url=reset_url)
+                )
+                mail.send(msg)
+            except Exception as e:
+                logger.error(f"Password reset email error: {str(e)}")
+        flash("If that email is registered, a reset link has been sent. Check your inbox.")
+        return redirect(url_for('main.login'))
+    return render_template("forgot_password.html", form=form)
+
+@main.route("/reset-password/<token>", methods=["GET", "POST"])
+def reset_password(token):
+    user = User.query.filter_by(reset_token=token).first()
+    if not user or not user.is_reset_token_valid(token):
+        flash("This reset link is invalid or has expired. Please request a new one.")
+        return redirect(url_for('main.forgot_password'))
+    form = ResetPasswordForm()
+    if form.validate_on_submit():
+        try:
+            user.set_password(form.password.data)
+            user.reset_token = None
+            user.reset_token_expiry = None
+            db.session.commit()
+            flash("Password reset successfully! You can now log in.")
+            return redirect(url_for('main.login'))
+        except Exception as e:
+            db.session.rollback()
+            logger.error(f"Reset password error: {str(e)}")
+            flash("An error occurred. Please try again.")
+    return render_template("reset_password.html", form=form, token=token)
+
+# ─── Dashboard ───────────────────────────────────────────────────────────────
 @main.route("/dashboard")
 @login_required
 def dashboard():
@@ -66,12 +124,9 @@ def dashboard():
         activity_id = request.args.get('activity')
         campus_area_id = request.args.get('campus_area')
         university = request.args.get('university')
-
         query = Event.query
-
         if activity_id:
             query = query.filter_by(activity_id=activity_id)
-
         if university:
             all_areas = CampusArea.query.all()
             matching_ids = [
@@ -82,7 +137,6 @@ def dashboard():
                 query = query.filter(Event.campus_area_id.in_(matching_ids))
         elif campus_area_id:
             query = query.filter_by(campus_area_id=campus_area_id)
-
         events = query.all()
         activities = Activity.query.all()
         campus_areas = CampusArea.query.all()
@@ -92,6 +146,7 @@ def dashboard():
         flash("An error occurred loading the dashboard. Please try again.")
         return redirect(url_for("main.home"))
 
+# ─── Create Event ─────────────────────────────────────────────────────────────
 @main.route("/event/new", methods=["GET", "POST"])
 @login_required
 def create_event():
@@ -118,12 +173,14 @@ def create_event():
             flash("An error occurred creating the event. Please try again.")
     return render_template("create_event.html", form=form)
 
+# ─── RSVP ────────────────────────────────────────────────────────────────────
 @main.route("/rsvp/<int:event_id>")
 @login_required
 def rsvp(event_id):
     try:
         event = Event.query.get_or_404(event_id)
         existing = RSVP.query.filter_by(user_id=current_user.id, event_id=event_id).first()
+        rsvp_confirmed = False
         if existing and existing.status == 'confirmed':
             flash("Already RSVP'd!")
         elif existing and existing.status == 'cancelled':
@@ -132,6 +189,7 @@ def rsvp(event_id):
             else:
                 existing.status = 'confirmed'
                 db.session.commit()
+                rsvp_confirmed = True
                 flash("See you there!")
         else:
             if event.is_full():
@@ -140,13 +198,64 @@ def rsvp(event_id):
                 new_rsvp = RSVP(user_id=current_user.id, event_id=event_id)
                 db.session.add(new_rsvp)
                 db.session.commit()
+                rsvp_confirmed = True
                 flash("See you there!")
+
+        # Send notification email to the attendee and to the organiser
+        if rsvp_confirmed:
+            _send_rsvp_notifications(event, current_user)
+
     except Exception as e:
         db.session.rollback()
         logger.error(f"RSVP error: {str(e)}")
         flash("An error occurred with your RSVP. Please try again.")
     return redirect(url_for("main.dashboard"))
 
+def _send_rsvp_notifications(event, attendee):
+    """Send email to the attendee confirming RSVP, and to the organiser alerting them."""
+    try:
+        # 1. Confirmation email to the person who RSVPed
+        msg_attendee = Message(
+            subject=f"Tukutane — You're going to {event.title}!",
+            recipients=[attendee.email],
+            html=render_template("email/rsvp_confirmation.html", event=event, user=attendee)
+        )
+        mail.send(msg_attendee)
+    except Exception as e:
+        logger.error(f"RSVP confirmation email failed: {e}")
+
+    try:
+        # 2. Notification to the organiser
+        organiser = User.query.get(event.organiser_id)
+        if organiser and organiser.email != attendee.email:
+            msg_organiser = Message(
+                subject=f"Tukutane — New RSVP for {event.title}",
+                recipients=[organiser.email],
+                html=render_template("email/rsvp_organiser_notify.html", event=event, attendee=attendee, organiser=organiser)
+            )
+            mail.send(msg_organiser)
+    except Exception as e:
+        logger.error(f"RSVP organiser notification email failed: {e}")
+
+# ─── Cancel RSVP ─────────────────────────────────────────────────────────────
+@main.route("/cancel_rsvp/<int:event_id>")
+@login_required
+def cancel_rsvp(event_id):
+    try:
+        rsvp = RSVP.query.filter_by(user_id=current_user.id, event_id=event_id).first()
+        if rsvp:
+            rsvp.status = 'cancelled'
+            db.session.commit()
+            flash("RSVP cancelled!")
+        else:
+            flash("RSVP not found.")
+    except Exception as e:
+        db.session.rollback()
+        logger.error(f"Cancel RSVP error: {str(e)}")
+        flash("An error occurred cancelling your RSVP. Please try again.")
+    return redirect(url_for("main.dashboard"))
+
+# ─── RSVPs list ──────────────────────────────────────────────────────────────
 @main.route("/rsvps")
 @login_required
 def rsvps():
@@ -158,6 +267,7 @@ def rsvps():
         flash("An error occurred loading your RSVPs. Please try again.")
         return redirect(url_for("main.dashboard"))
 
+# ─── Profile ─────────────────────────────────────────────────────────────────
 @main.route("/profile", methods=["GET", "POST"])
 @login_required
 def profile():
@@ -188,24 +298,7 @@ def profile():
             form.activities.data = [activity.id for activity in current_user.activities]
     return render_template("profile.html", form=form)
 
-
-@main.route("/cancel_rsvp/<int:event_id>")
-@login_required
-def cancel_rsvp(event_id):
-    try:
-        rsvp = RSVP.query.filter_by(user_id=current_user.id, event_id=event_id).first()
-        if rsvp:
-            rsvp.status = 'cancelled'
-            db.session.commit()
-            flash("RSVP cancelled!")
-        else:
-            flash("RSVP not found.")
-    except Exception as e:
-        db.session.rollback()
-        logger.error(f"Cancel RSVP error: {str(e)}")
-        flash("An error occurred cancelling your RSVP. Please try again.")
-    return redirect(url_for("main.dashboard"))
-
+# ─── Organizer ───────────────────────────────────────────────────────────────
 @main.route("/organizer")
 @login_required
 def organizer():
@@ -217,6 +310,18 @@ def organizer():
         flash("An error occurred loading your events. Please try again.")
         return redirect(url_for("main.dashboard"))
 
+@main.route('/organizer/dashboard', methods=['GET'])
+@login_required
+def organizer_dashboard():
+    try:
+        events = Event.query.filter_by(organiser_id=current_user.id).all()
+        return render_template('organizer_dashboard.html', events=events)
+    except Exception as e:
+        logger.error(f"Organizer dashboard error: {str(e)}")
+        flash("An error occurred loading the organizer dashboard. Please try again.")
+        return redirect(url_for("main.dashboard"))
+
+# ─── Edit Event ───────────────────────────────────────────────────────────────
 @main.route("/event/edit/<int:event_id>", methods=["GET", "POST"])
 @login_required
 def edit_event(event_id):
@@ -251,6 +356,7 @@ def edit_event(event_id):
         flash("An error occurred editing the event. Please try again.")
         return redirect(url_for("main.organizer"))
 
+# ─── Cancel Event ─────────────────────────────────────────────────────────────
 @main.route("/event/cancel/<int:event_id>")
 @login_required
 def cancel_event(event_id):
@@ -268,11 +374,7 @@ def cancel_event(event_id):
         flash("An error occurred cancelling the event. Please try again.")
     return redirect(url_for("main.organizer"))
 
-@main.route("/logout")
-def logout():
-    logout_user()
-    return redirect(url_for("main.home"))
-
+# ─── View RSVPs ───────────────────────────────────────────────────────────────
 @main.route("/event/<int:event_id>/rsvps")
 @login_required
 def view_rsvps(event_id):
@@ -288,13 +390,8 @@ def view_rsvps(event_id):
         flash("An error occurred viewing RSVPs. Please try again.")
         return redirect(url_for("main.dashboard"))
 
-@main.route('/organizer/dashboard', methods=['GET'])
-@login_required
-def organizer_dashboard():
-    try:
-        events = Event.query.filter_by(organiser_id=current_user.id).all()
-        return render_template('organizer_dashboard.html', events=events)
-    except Exception as e:
-        logger.error(f"Organizer dashboard error: {str(e)}")
-        flash("An error occurred loading the organizer dashboard. Please try again.")
-        return redirect(url_for("main.dashboard"))
+# ─── Logout ───────────────────────────────────────────────────────────────────
+@main.route("/logout")
+def logout():
+    logout_user()
+    return redirect(url_for("main.home"))
