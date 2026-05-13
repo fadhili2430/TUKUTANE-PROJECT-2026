@@ -7,6 +7,10 @@ from flask_mail import Message
 from datetime import datetime
 import logging
 import os
+import hmac
+import hashlib
+import subprocess
+import sys
 
 logger = logging.getLogger(__name__)
 
@@ -19,6 +23,70 @@ APK_DOWNLOAD_URL = 'https://github.com/fadhili2430/TUKUTANE-PROJECT-2026/release
 @main.route('/api/version')
 def app_version():
     return jsonify({'version': APP_VERSION, 'download_url': APK_DOWNLOAD_URL})
+
+# ─── Auto-deploy webhook (called by GitHub on every push) ────────────────────
+@main.route('/webhook/deploy', methods=['POST'])
+def deploy_webhook():
+    deploy_secret = os.environ.get('DEPLOY_SECRET', '')
+
+    if deploy_secret:
+        signature = request.headers.get('X-Hub-Signature-256', '')
+        payload = request.get_data()
+        expected = 'sha256=' + hmac.new(
+            deploy_secret.encode(), payload, hashlib.sha256
+        ).hexdigest()
+        if not hmac.compare_digest(signature, expected):
+            logger.warning("Deploy webhook: invalid signature")
+            return jsonify({'error': 'Unauthorized'}), 401
+
+    # Project root is two levels up from this file (app/routes.py -> app/ -> root)
+    project_root = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+    python_exe = sys.executable
+
+    results = {}
+
+    # 1. Pull latest code
+    try:
+        r = subprocess.run(
+            ['git', 'pull', 'origin', 'master'],
+            cwd=project_root, capture_output=True, text=True, timeout=60
+        )
+        results['git_pull'] = r.stdout.strip() or r.stderr.strip()
+    except Exception as e:
+        results['git_pull'] = f'error: {e}'
+
+    # 2. Install any new dependencies
+    try:
+        req_file = os.path.join(project_root, 'requirements.txt')
+        r = subprocess.run(
+            [python_exe, '-m', 'pip', 'install', '-r', req_file, '-q'],
+            cwd=project_root, capture_output=True, text=True, timeout=120
+        )
+        results['pip_install'] = 'ok' if r.returncode == 0 else r.stderr.strip()[:200]
+    except Exception as e:
+        results['pip_install'] = f'error: {e}'
+
+    # 3. Run database migrations
+    try:
+        r = subprocess.run(
+            [python_exe, '-m', 'flask', 'db', 'upgrade'],
+            cwd=project_root, capture_output=True, text=True, timeout=60,
+            env={**os.environ, 'FLASK_APP': 'wsgi.py'}
+        )
+        results['db_upgrade'] = 'ok' if r.returncode == 0 else r.stderr.strip()[:200]
+    except Exception as e:
+        results['db_upgrade'] = f'error: {e}'
+
+    # 4. Touch wsgi.py — PythonAnywhere watches this file and reloads the app
+    try:
+        wsgi_path = os.path.join(project_root, 'wsgi.py')
+        os.utime(wsgi_path, None)
+        results['reload'] = 'wsgi.py touched — app will reload'
+    except Exception as e:
+        results['reload'] = f'error: {e}'
+
+    logger.info(f"Deploy webhook completed: {results}")
+    return jsonify({'status': 'deployed', 'details': results}), 200
 
 # ─── Home ────────────────────────────────────────────────────────────────────
 @main.route("/")
@@ -77,7 +145,6 @@ def forgot_password():
     form = ForgotPasswordForm()
     if form.validate_on_submit():
         user = User.query.filter_by(email=form.email.data.lower().strip()).first()
-        # Always show success to avoid email enumeration
         if user:
             try:
                 token = user.generate_reset_token()
@@ -200,11 +267,8 @@ def rsvp(event_id):
                 db.session.commit()
                 rsvp_confirmed = True
                 flash("See you there!")
-
-        # Send notification email to the attendee and to the organiser
         if rsvp_confirmed:
             _send_rsvp_notifications(event, current_user)
-
     except Exception as e:
         db.session.rollback()
         logger.error(f"RSVP error: {str(e)}")
@@ -212,9 +276,7 @@ def rsvp(event_id):
     return redirect(url_for("main.dashboard"))
 
 def _send_rsvp_notifications(event, attendee):
-    """Send email to the attendee confirming RSVP, and to the organiser alerting them."""
     try:
-        # 1. Confirmation email to the person who RSVPed
         msg_attendee = Message(
             subject=f"Tukutane — You're going to {event.title}!",
             recipients=[attendee.email],
@@ -223,9 +285,7 @@ def _send_rsvp_notifications(event, attendee):
         mail.send(msg_attendee)
     except Exception as e:
         logger.error(f"RSVP confirmation email failed: {e}")
-
     try:
-        # 2. Notification to the organiser
         organiser = User.query.get(event.organiser_id)
         if organiser and organiser.email != attendee.email:
             msg_organiser = Message(
