@@ -9,6 +9,7 @@ import android.content.pm.PackageManager
 import android.net.ConnectivityManager
 import android.net.NetworkCapabilities
 import android.net.Uri
+import android.net.http.SslError
 import android.os.Build
 import android.os.Bundle
 import android.view.View
@@ -27,6 +28,10 @@ import java.net.URL
 
 class MainActivity : AppCompatActivity() {
 
+    companion object {
+        const val CHANNEL_ID = "tukutane_events"
+    }
+
     private lateinit var webView: WebView
     private lateinit var swipeRefresh: SwipeRefreshLayout
     private lateinit var offlineLayout: View
@@ -35,7 +40,7 @@ class MainActivity : AppCompatActivity() {
 
     private val TARGET_URL = "https://tukutaneproject.pythonanywhere.com/"
     private val VERSION_URL = "https://tukutaneproject.pythonanywhere.com/api/version"
-    private val CURRENT_VERSION = "1.0.10"
+    private val CURRENT_VERSION = "1.0.5"
     private var updateDialogShown = false
     private var tokenSyncDone = false
 
@@ -48,7 +53,7 @@ class MainActivity : AppCompatActivity() {
         setContentView(R.layout.activity_main)
 
         webView       = findViewById(R.id.webView)
-        swipeRefresh  = findViewById(R.id.swipeRefresh)
+        swipeRefresh  = findViewById(R.id.swipeRefreshLayout)
         offlineLayout = findViewById(R.id.offlineLayout)
         retryButton   = findViewById(R.id.retryButton)
         offlineText   = findViewById(R.id.offlineText)
@@ -105,7 +110,6 @@ class MainActivity : AppCompatActivity() {
     }
 
     private fun sendTokenToServer(token: String) {
-        // Use the WebView to POST the token — it already has the session cookie
         val js = """
             (function() {
                 var fd = new FormData();
@@ -150,7 +154,6 @@ class MainActivity : AppCompatActivity() {
             override fun onPageFinished(view: WebView?, url: String?) {
                 super.onPageFinished(view, url)
                 swipeRefresh.isRefreshing = false
-                // Sync FCM token when user is logged in (on dashboard or any auth page)
                 if (url != null && (url.contains("/dashboard") || url.contains("/profile")
                             || url.contains("/rsvp") || url.contains("/organizer"))) {
                     syncFcmToken()
@@ -189,7 +192,7 @@ class MainActivity : AppCompatActivity() {
     }
 
     private fun setupSwipeRefresh() {
-        swipeRefresh.setColorSchemeColors(resources.getColor(R.color.primary, theme))
+        swipeRefresh.setColorSchemeColors(resources.getColor(R.color.colorPrimary, theme))
         swipeRefresh.setOnRefreshListener {
             if (isOnline()) { showWebView(); webView.reload() }
             else { swipeRefresh.isRefreshing = false; showOffline() }
@@ -242,7 +245,7 @@ class MainActivity : AppCompatActivity() {
         if (updateDialogShown || isFinishing) return
         updateDialogShown = true
         AlertDialog.Builder(this)
-            .setTitle("Update Available 🎉")
+            .setTitle("Update Available")
             .setMessage("Tukutane v$newVersion is ready.\n\nInstall over your current version — no uninstall needed.")
             .setPositiveButton("Update Now") { _, _ ->
                 val url = downloadUrl.ifEmpty { "https://github.com/fadhili2430/TUKUTANE-PROJECT-2026/releases/latest" }
